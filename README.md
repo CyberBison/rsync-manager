@@ -1,6 +1,7 @@
 # rsync-manager
 
 **Author**: CyberBison
+
 **License**: GPL-3.0
 
 ---
@@ -28,7 +29,7 @@ This project is still in its early stages, and more features are being actively 
 To run the project:
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/rsync-manager.git
+   git clone https://github.com/CyberBison/rsync-manager.git
    cd rsync-manager
    ```
 2. Open the project in Xcode.
@@ -71,7 +72,7 @@ As this project is a work in progress, contributions are welcome! Feel free to:
 
 ## Contact
 
-For any questions or feedback, you can reach the author **CyberBison** through GitHub.
+For any questions or feedback, you can reach the author **CyberBison** through GitHub or on [BlueSky](https://bsky.app/profile/cyberbison.io) / [X](https://x.com/cyberbison_io)
 
 ---
 
