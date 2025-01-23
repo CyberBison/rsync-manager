@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2969E9412D42E4B900C9A27E /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 2969E9402D42E4B200C9A27E /* LICENSE */; };
+		2969E9432D42E4CA00C9A27E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 2969E9422D42E4C600C9A27E /* README.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		2969E9042D42DB0900C9A27E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +32,8 @@
 		2969E8F22D42DB0700C9A27E /* rsync-manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "rsync-manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2969E9032D42DB0900C9A27E /* rsync-managerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "rsync-managerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2969E90D2D42DB0900C9A27E /* rsync-managerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "rsync-managerUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2969E9402D42E4B200C9A27E /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		2969E9422D42E4C600C9A27E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +82,8 @@
 		2969E8E92D42DB0700C9A27E = {
 			isa = PBXGroup;
 			children = (
+				2969E9422D42E4C600C9A27E /* README.md */,
+				2969E9402D42E4B200C9A27E /* LICENSE */,
 				2969E8F42D42DB0700C9A27E /* rsync-manager */,
 				2969E9062D42DB0900C9A27E /* rsync-managerTests */,
 				2969E9102D42DB0900C9A27E /* rsync-managerUITests */,
@@ -212,6 +221,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2969E9412D42E4B900C9A27E /* LICENSE in Resources */,
+				2969E9432D42E4CA00C9A27E /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
