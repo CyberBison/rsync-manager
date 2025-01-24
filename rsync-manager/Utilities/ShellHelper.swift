@@ -16,10 +16,10 @@ struct ShellHelper {
         task.standardOutput = pipe
         task.standardError = pipe
         task.arguments = ["-c", command]
-        task.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        
+        task.executableURL = URL(fileURLWithPath: "/bin/bash")
         try task.run()
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         return String(data: data, encoding: .utf8) ?? ""
     }
 }
+

@@ -15,8 +15,15 @@ struct ContentView: View {
         NavigationStack(path: $path) {
             MainListView(onAddTask: { path.append("addTask") })
                 .environmentObject(viewModel)
+                .onChange(of: viewModel.tasks) { _ in
+                    viewModel.saveTasks()
+                }
                 .navigationDestination(for: String.self) { destination in
                     switch destination {
+                        
+                    case "logs":
+                        LogsView()
+                            .environmentObject(viewModel)
                     case "addTask":
                         FormView(onDismiss: { path.removeLast() })
                             .environmentObject(viewModel)
@@ -27,6 +34,11 @@ struct ContentView: View {
                     }
                 }
                 .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        Button("Logs") {
+                            path.append("logs")
+                        }
+                    }
                     ToolbarItem(placement: .automatic) {
                         Button("Settings") {
                             path.append("settings")

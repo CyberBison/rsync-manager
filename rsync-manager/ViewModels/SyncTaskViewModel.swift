@@ -10,30 +10,119 @@ import Foundation
 class SyncTaskViewModel: ObservableObject {
     @Published var tasks: [SyncTask] = []
     @Published var selectedTask: SyncTask?
+    @Published var logs: [LogEntry] = []
+    
+    private let tasksFileName = "sync_tasks.json"
+    private let logsFileName = "sync_logs.json"
+    
+    init() {
+        loadTasks()
+        loadLogs()
+    }
     
     func addTask(source: String, destination: String) {
         let newTask = SyncTask(id: UUID(), source: source, destination: destination, lastSyncDate: nil, isActive: true)
         tasks.append(newTask)
     }
     
-    func runSync(task: SyncTask){
-        guard let source = task.source.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-              let destination = task.destination.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            return
-        }
-        
-        let command = "rsync -av --delete '\(source)' '\(destination)'"
+    func runSync(task: SyncTask) {
         do {
-            let result = try ShellHelper.runCommand(command)
+            // Prepare arguments for rsync
+            let arguments = [
+                "-av", "--delete",
+                task.source,
+                task.destination
+            ]
+            
+            // Execute the bundled rsync
+            let result = try executeBundledRsync(arguments: arguments)
             print("Sync Result: \(result)")
             
             // Update the last sync date
             if let index = tasks.firstIndex(where: { $0.id == task.id }) {
                 tasks[index].lastSyncDate = Date()
             }
-        }
-        catch{
+            addLog(taskId: task.id, result: result, success: true)
+        } catch {
             print("Error running sync: \(error)")
+            addLog(taskId: task.id, result: "\(error)", success: false)
         }
+    }
+    
+    func saveTasks() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(tasksFileName)
+        do {
+            let data = try JSONEncoder().encode(tasks)
+            try data.write(to: fileURL)
+            print("Tasks saved successfully to \(fileURL)")
+        }
+        catch {
+            print("Failed to save tasks: \(error)")
+        }
+    }
+    
+    func loadTasks(){
+        let fileURL = getDocumentsDirectory().appendingPathComponent(tasksFileName)
+        do{
+            let data = try Data(contentsOf: fileURL)
+            tasks = try JSONDecoder().decode([SyncTask].self, from: data)
+            print("Tasks loaded successfully from \(fileURL)")
+        }
+        catch {
+            print("No tasks to load or failed to load tasks: \(error)")
+        }
+    }
+    
+    private func getDocumentsDirectory() -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    
+    func saveLogs() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(logsFileName)
+        do {
+            let data = try JSONEncoder().encode(logs)
+            try data.write(to: fileURL)
+            print("Logs saved successfully to \(fileURL)")
+        }
+        catch {
+            print("Failed to save logs: \(error)")
+        }
+    }
+    
+    func loadLogs() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(logsFileName)
+        do {
+            let data = try Data(contentsOf: fileURL)
+            logs = try JSONDecoder().decode([LogEntry].self, from: data)
+            print("Logs loaded successfully from \(fileURL)")
+        }
+        catch {
+            print("No logs to load or failed to load logs: \(error)")
+        }
+    }
+    
+    func addLog(taskId: UUID, result: String, success: Bool){
+        let newLog = LogEntry(id: UUID(), timestamp: Date(), taskId: taskId, result: result, success: success)
+        logs.append(newLog)
+        saveLogs()
+    }
+    
+    func executeBundledRsync(arguments: [String]) throws -> String {
+        let task = Process()
+        let pipe = Pipe()
+
+        // Locate the bundled rsync
+        guard let rsyncPath = Bundle.main.path(forResource: "rsync", ofType: nil) else {
+            throw NSError(domain: "RsyncManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bundled rsync not found"])
+        }
+
+        task.executableURL = URL(fileURLWithPath: rsyncPath)
+        task.arguments = arguments
+        task.standardOutput = pipe
+        task.standardError = pipe
+
+        try task.run()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8) ?? ""
     }
 }

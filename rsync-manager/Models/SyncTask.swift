@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct SyncTask: Identifiable, Codable {
+struct SyncTask: Identifiable, Codable, Equatable {
     let id: UUID
     var source: String
     var destination: String
