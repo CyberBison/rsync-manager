@@ -9,6 +9,7 @@ import Foundation
 
 struct SyncTask: Identifiable, Codable, Equatable {
     let id: UUID
+    var name: String
     var source: String
     var destination: String
     var lastSyncDate: Date?

@@ -20,8 +20,8 @@ class SyncTaskViewModel: ObservableObject {
         loadLogs()
     }
     
-    func addTask(source: String, destination: String) {
-        let newTask = SyncTask(id: UUID(), source: source, destination: destination, lastSyncDate: nil, lastSyncStatus: nil, isActive: true)
+    func addTask(name: String, source: String, destination: String) {
+        let newTask = SyncTask(id: UUID(), name: name, source: source, destination: destination, lastSyncDate: nil, lastSyncStatus: nil, isActive: true)
         tasks.append(newTask)
     }
     

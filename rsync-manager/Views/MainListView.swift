@@ -15,6 +15,9 @@ struct MainListView: View {
         VStack {
             List(viewModel.tasks) { task in
                 VStack(alignment: .leading) {
+                    
+                    Text(task.name).font(.title).bold()
+                    
                     HStack{
                         Text("Source:").bold()
                         Text(task.source)
@@ -35,6 +38,7 @@ struct MainListView: View {
                     Button("Sync Now") {
                         viewModel.runSync(task: task)
                     }
+                    Divider()
                 }
             }
             Button("Add Task", action: onAddTask)
