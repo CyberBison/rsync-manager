@@ -15,7 +15,7 @@ struct ContentView: View {
         NavigationStack(path: $path) {
             MainListView(onAddTask: { path.append("addTask") })
                 .environmentObject(viewModel)
-                .onChange(of: viewModel.tasks) { _ in
+                .onChange(of: viewModel.tasks) { _, _ in
                     viewModel.saveTasks()
                 }
                 .navigationDestination(for: String.self) { destination in

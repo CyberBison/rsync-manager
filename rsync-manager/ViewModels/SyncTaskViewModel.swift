@@ -27,17 +27,15 @@ class SyncTaskViewModel: ObservableObject {
     
     func runSync(task: SyncTask) {
         do {
-            // Prepare arguments for rsync
-            let arguments = [
-                "-av", "--delete",
-                task.source,
-                task.destination
-            ]
-            
-            // Execute the bundled rsync
-            let result = try executeBundledRsync(arguments: arguments)
+            // Prepare the rsync command
+            let command = """
+            /usr/bin/rsync -av --delete "\(task.source)" "\(task.destination)"
+            """
+
+            // Run the rsync command using ShellHelper
+            let result = try ShellHelper.runCommand(command)
             print("Sync Result: \(result)")
-            
+
             // Update the last sync date
             if let index = tasks.firstIndex(where: { $0.id == task.id }) {
                 tasks[index].lastSyncDate = Date()
@@ -55,20 +53,18 @@ class SyncTaskViewModel: ObservableObject {
             let data = try JSONEncoder().encode(tasks)
             try data.write(to: fileURL)
             print("Tasks saved successfully to \(fileURL)")
-        }
-        catch {
+        } catch {
             print("Failed to save tasks: \(error)")
         }
     }
     
-    func loadTasks(){
+    func loadTasks() {
         let fileURL = getDocumentsDirectory().appendingPathComponent(tasksFileName)
-        do{
+        do {
             let data = try Data(contentsOf: fileURL)
             tasks = try JSONDecoder().decode([SyncTask].self, from: data)
             print("Tasks loaded successfully from \(fileURL)")
-        }
-        catch {
+        } catch {
             print("No tasks to load or failed to load tasks: \(error)")
         }
     }
@@ -83,8 +79,7 @@ class SyncTaskViewModel: ObservableObject {
             let data = try JSONEncoder().encode(logs)
             try data.write(to: fileURL)
             print("Logs saved successfully to \(fileURL)")
-        }
-        catch {
+        } catch {
             print("Failed to save logs: \(error)")
         }
     }
@@ -95,34 +90,16 @@ class SyncTaskViewModel: ObservableObject {
             let data = try Data(contentsOf: fileURL)
             logs = try JSONDecoder().decode([LogEntry].self, from: data)
             print("Logs loaded successfully from \(fileURL)")
-        }
-        catch {
+        } catch {
             print("No logs to load or failed to load logs: \(error)")
         }
     }
     
-    func addLog(taskId: UUID, result: String, success: Bool){
+    func addLog(taskId: UUID, result: String, success: Bool) {
         let newLog = LogEntry(id: UUID(), timestamp: Date(), taskId: taskId, result: result, success: success)
         logs.append(newLog)
         saveLogs()
     }
     
-    func executeBundledRsync(arguments: [String]) throws -> String {
-        let task = Process()
-        let pipe = Pipe()
-
-        // Locate the bundled rsync
-        guard let rsyncPath = Bundle.main.path(forResource: "rsync", ofType: nil) else {
-            throw NSError(domain: "RsyncManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Bundled rsync not found"])
-        }
-
-        task.executableURL = URL(fileURLWithPath: rsyncPath)
-        task.arguments = arguments
-        task.standardOutput = pipe
-        task.standardError = pipe
-
-        try task.run()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8) ?? ""
-    }
+    
 }
