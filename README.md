@@ -1,80 +1,88 @@
+
 # rsync-manager
 
-**Author**: CyberBison
-
-**License**: GPL-3.0
-
----
-
-## Overview
-
-`rsync-manager` is a **macOS app** designed to simplify managing `rsync` backups. The goal is to provide a user-friendly interface for creating, editing, and executing backup tasks. With this app, you can quickly define source and destination folders, run backups on demand, and monitor the status of your sync tasks.
-
-### **Current Features**
-- **Task Management**: Add and configure sync tasks with ease.
-- **Folder Selection**: Choose source and destination directories through a simple UI.
-- **Manual Sync Execution**: Trigger `rsync` commands directly from the app.
-- **Sync History**: View the last sync date for each task (coming soon).
-
----
-
-## Work in Progress 🚧
+**Author**: CyberBison  
+**License**: GPL-3.0  
+**Current version**: 1.0.0
 
 This project is still in its early stages, and more features are being actively developed.
 
 ---
 
+## Overview
+
+`rsync-manager` is a lightweight macOS app designed to simplify `rsync` backups. It provides an intuitive interface for creating, editing, and executing backup tasks, making it easier to manage your data synchronization workflows without needing to remember complex terminal commands.
+
+### **Key Features**
+- **Task Management**: Create and configure multiple `rsync` tasks effortlessly.
+- **Easy Folder Selection**: Select source and destination directories via a clean user interface.
+- **Manual Execution**: Execute backup tasks directly from the app.
+- **Planned Enhancements**:
+  - **Sync History**: Track the last execution time for each task.
+  - **Scheduled Backups**: Automate tasks on a customizable schedule.
+  - **Notifications**: Get notified of sync progress and errors.
+
+---
+
+## Requirements
+
+- **macOS**: Version 14.6 or higher
+- **Homebrew**: For easy installation (optional but recommended)
+
+---
+
 ## Installation
 
-To run the project:
+### Option 1: Install via Homebrew
+1. Tap the custom Homebrew repository:
+   ```bash
+   brew tap cyberbison/custombrew
+   ```
+2. Install the app:
+   ```bash
+   brew install --cask rsync-manager
+   ```
+
+### Option 2: Build from Source
 1. Clone the repository:
    ```bash
    git clone https://github.com/CyberBison/rsync-manager.git
    cd rsync-manager
    ```
-2. Open the project in Xcode.
-3. Build and run the app on macOS.
-
-Once a fully usable version is available, it will be distributed via **Homebrew** for easy installation.
-
----
-
-## Usage
-
-1. Launch the app.
-2. Add a new task by specifying:
-   - Source folder
-   - Destination folder
-3. Click **Sync Now** to execute the backup.
-4. View the sync status and last sync date in the task list.
+2. Open the project in Xcode:
+   ```bash
+   open rsync-manager.xcodeproj
+   ```
+3. Build and run the app.
 
 ---
 
-## Requirements
-- macOS 12.0 (Monterey) or later
-- Xcode 14 or later
+## Getting Started
 
----
-
-## License
-
-This project is licensed under the **GPL-3.0** License. See the [LICENSE](LICENSE) file for details.
+1. Launch `rsync-manager` from your Applications folder or via Spotlight.
+2. Use the **Add Task** button to define your first backup task:
+   - Select the source folder.
+   - Select the destination folder.
+3. Run tasks with a single click or edit existing tasks to fine-tune settings.
 
 ---
 
 ## Contributing
 
-As this project is a work in progress, contributions are welcome! Feel free to:
-- Submit issues or feature requests.
-- Open pull requests with new features or improvements.
+Contributions are welcome! Feel free to submit issues or feature requests via the [GitHub Issues](https://github.com/CyberBison/rsync-manager/issues) page. For larger contributions, please fork the repository and submit a pull request.
 
 ---
 
-## Contact
+## Support
 
-For any questions or feedback, you can reach the author **CyberBison** through GitHub or on [BlueSky](https://bsky.app/profile/cyberbison.io) / [X](https://x.com/cyberbison_io)
+If you encounter any issues or have questions, please reach out via [GitHub Discussions](https://github.com/CyberBison/rsync-manager/discussions).
 
 ---
 
-Enjoy managing your backups with ease! 🚀
-More updates are on the way—stay tuned!
+## License
+
+This project is licensed under the [GPL-3.0 License](https://www.gnu.org/licenses/gpl-3.0.en.html).
+
+---
+
+Thank you for using `rsync-manager`! 🚀
