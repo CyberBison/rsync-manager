@@ -12,5 +12,6 @@ struct SyncTask: Identifiable, Codable, Equatable {
     var source: String
     var destination: String
     var lastSyncDate: Date?
+    var lastSyncStatus: String?
     var isActive: Bool
 }

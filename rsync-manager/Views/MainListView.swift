@@ -15,12 +15,22 @@ struct MainListView: View {
         VStack {
             List(viewModel.tasks) { task in
                 VStack(alignment: .leading) {
-                    Text("Source: \(task.source)")
-                    Text("Destination: \(task.destination)")
+                    HStack{
+                        Text("Source:").bold()
+                        Text(task.source)
+                    }
+                    HStack{
+                        Text("Destination:").bold()
+                        Text(task.destination)
+                    }
                     if let date = task.lastSyncDate {
                         Text("Last Sync: \(date, formatter: DateFormatter.shortDateTime)")
                     } else {
                         Text("Last Sync: Never")
+                    }
+                    if let status = task.lastSyncStatus {
+                        Label("Status: \(status)", systemImage: "circlebadge.fill")
+                            .foregroundColor(status == "success" ? .green : .red)
                     }
                     Button("Sync Now") {
                         viewModel.runSync(task: task)

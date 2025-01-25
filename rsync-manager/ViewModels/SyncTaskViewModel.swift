@@ -21,7 +21,7 @@ class SyncTaskViewModel: ObservableObject {
     }
     
     func addTask(source: String, destination: String) {
-        let newTask = SyncTask(id: UUID(), source: source, destination: destination, lastSyncDate: nil, isActive: true)
+        let newTask = SyncTask(id: UUID(), source: source, destination: destination, lastSyncDate: nil, lastSyncStatus: nil, isActive: true)
         tasks.append(newTask)
     }
     
@@ -36,13 +36,23 @@ class SyncTaskViewModel: ObservableObject {
             let result = try ShellHelper.runCommand(command)
             print("Sync Result: \(result)")
 
+            let isError = result.contains("rsync error")
+            let syncStatus = isError ? "error" : "success"
+            
             // Update the last sync date
             if let index = tasks.firstIndex(where: { $0.id == task.id }) {
                 tasks[index].lastSyncDate = Date()
+                tasks[index].lastSyncStatus = syncStatus
             }
             addLog(taskId: task.id, result: result, success: true)
         } catch {
             print("Error running sync: \(error)")
+            
+            if let index = tasks.firstIndex(where: { $0.id == task.id }) {
+                tasks[index].lastSyncDate = Date()
+                tasks[index].lastSyncStatus = "error"
+            }
+            
             addLog(taskId: task.id, result: "\(error)", success: false)
         }
     }
