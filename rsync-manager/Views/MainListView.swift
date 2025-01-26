@@ -38,8 +38,8 @@ struct MainListView: View {
                     Button("Sync Now") {
                         viewModel.runSync(task: task)
                     }
-                    Divider()
                 }
+                .padding()
             }
             Button("Add Task", action: onAddTask)
                 .padding()

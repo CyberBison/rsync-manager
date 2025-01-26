@@ -20,17 +20,28 @@ class SyncTaskViewModel: ObservableObject {
         loadLogs()
     }
     
-    func addTask(name: String, source: String, destination: String) {
-        let newTask = SyncTask(id: UUID(), name: name, source: source, destination: destination, lastSyncDate: nil, lastSyncStatus: nil, isActive: true)
+    func addTask(name: String, arguments: String, source: String, destination: String) {
+        let newTask = SyncTask(
+            id: UUID(),
+            name: name,
+            arguments: arguments,
+            source: source,
+            destination: destination,
+            lastSyncDate: nil,
+            lastSyncStatus: nil,
+            isActive: true
+        )
         tasks.append(newTask)
     }
     
     func runSync(task: SyncTask) {
         do {
+            
             // Prepare the rsync command
             let command = """
-            /usr/bin/rsync -av --delete "\(task.source)" "\(task.destination)"
+            /usr/bin/rsync \(task.arguments) "\(task.source)" "\(task.destination)"
             """
+            
 
             // Run the rsync command using ShellHelper
             let result = try ShellHelper.runCommand(command)
