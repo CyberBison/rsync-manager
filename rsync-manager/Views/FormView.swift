@@ -28,7 +28,7 @@ struct FormView: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.bottom)
             Section {
-                Link("Click here for a complete guide of rsync and a full list of arguments", destination: URL(string: "https://github.com/cyberbison/rsync-manager/blob/rsync-manager-v1.0.1/rsync_help_guide.md")!)
+                Link("Click here for a complete guide of rsync and a full list of arguments", destination: URL(string: "https://github.com/cyberbison/rsync-manager/blob/main/rsync_help_guide.md")!)
                     .foregroundColor(.blue)
             }
             FolderPicker(label: "Source", path: $source).bold().padding(.vertical, 5)
