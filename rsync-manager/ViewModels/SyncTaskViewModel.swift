@@ -34,6 +34,21 @@ class SyncTaskViewModel: ObservableObject {
         tasks.append(newTask)
     }
     
+    func updateTask(_ task: SyncTask, name: String, arguments: String, source: String, destination: String) {
+        if let index = tasks.firstIndex(where: { $0.id == task.id }) {
+                tasks[index] = SyncTask(
+                    id: task.id,
+                    name: name,
+                    arguments: arguments,
+                    source: source,
+                    destination: destination,
+                    lastSyncDate: task.lastSyncDate,
+                    lastSyncStatus: task.lastSyncStatus,
+                    isActive: task.isActive
+                )
+            }
+        }
+    
     func runSync(task: SyncTask) {
         do {
             
