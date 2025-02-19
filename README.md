@@ -3,7 +3,8 @@
 
 **Author**: CyberBison  
 **License**: GPL-3.0  
-**Current version**: 1.0.0
+**Current version**: 1.0.2
+**Changelog**: [View here](https://rsync.cyberbison.dev/changelog)
 
 This project is still in its early stages, and more features are being actively developed.
 
