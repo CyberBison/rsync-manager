@@ -39,11 +39,11 @@ struct ContentView: View {
                             path.append("logs")
                         }
                     }
-                    ToolbarItem(placement: .automatic) {
+                    /*ToolbarItem(placement: .automatic) {
                         Button("Settings") {
                             path.append("settings")
                         }
-                    }
+                    }*/
                 }
         }
     }

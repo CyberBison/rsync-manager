@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct MainListView: View {
+    @State private var showingForm = false
+    @State private var selectedTask: SyncTask? = nil
     @EnvironmentObject var viewModel: SyncTaskViewModel
     let onAddTask: () -> Void
-
+    
     var body: some View {
         VStack {
             List(viewModel.tasks) { task in
@@ -35,16 +37,30 @@ struct MainListView: View {
                         Label("Status: \(status)", systemImage: "circlebadge.fill")
                             .foregroundColor(status == "success" ? .green : .red)
                     }
-                    Button("Sync Now") {
-                        viewModel.runSync(task: task)
+                    HStack{
+                        
+                        Button("Sync Now") {
+                            viewModel.runSync(task: task)
+                        }
+                        Button("Edit") {
+                            selectedTask = task
+                            showingForm = true
+                        }
                     }
                 }
                 .padding()
             }
-            Button("Add Task", action: onAddTask)
-                .padding()
+            Button("Add Task"){
+                selectedTask = SyncTask(id: UUID(), name: "", arguments: "-av --delete", source: "", destination: "", lastSyncDate: nil, lastSyncStatus: nil, isActive: true)
+                showingForm = true
+            }
+            .padding()
         }
         .navigationTitle("Task List")
+        .sheet(item: $selectedTask) { task in
+                    FormView(task: task, onDismiss: { selectedTask = nil })
+                        .environmentObject(viewModel)
+                }
     }
 }
 

@@ -10,10 +10,17 @@ import SwiftUI
 struct FormView: View {
     @EnvironmentObject var viewModel: SyncTaskViewModel
     let onDismiss: () -> Void
+    var task: SyncTask?
+    
     @State private var name: String = ""
     @State private var arguments: String = "-av --delete"
     @State private var source: String = ""
     @State private var destination: String = ""
+    
+    init(task: SyncTask? = nil, onDismiss: @escaping () -> Void){
+        self.task = task
+        self.onDismiss = onDismiss
+    }
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -34,14 +41,35 @@ struct FormView: View {
             FolderPicker(label: "Source", path: $source).bold().padding(.vertical, 5)
             FolderPicker(label: "Destination", path: $destination).bold()
             HStack {
-                Button("Save") {
-                    viewModel.addTask(name: name, arguments: arguments, source: source, destination: destination)
+                Button(task == nil ? "Save" : "Update") {
+                    if let task = task {
+                        viewModel.updateTask(task, name: name, arguments: arguments, source: source, destination: destination)
+                    }
+                    else {
+                        viewModel.addTask(name: name, arguments: arguments, source: source, destination: destination)
+                    }
                     onDismiss()
                 }
                 Button("Cancel", action: onDismiss)
             }
         }
         .padding()
-        .navigationTitle("Add Task")
+        .navigationTitle(task == nil ? "Add Task" : "Edit Task")
+        .onAppear {
+                    if let task = task {
+                        name = task.name
+                        arguments = task.arguments
+                        source = task.source
+                        destination = task.destination
+                    }
+                }
+        .onChange(of: task) {
+            if let task = task {
+                name = task.name
+                arguments = task.arguments
+                source = task.source
+                destination = task.destination
+            }
+        }
     }
 }
