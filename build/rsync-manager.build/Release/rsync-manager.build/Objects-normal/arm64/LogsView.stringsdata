@@ -1,0 +1,136 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/LogsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Sync History",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 36
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profile",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 41
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search output",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "All Profiles",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "Stopping…",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "Syncing…",
+        "location": {
+          "startingColumn": 65,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "Stop",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "No history yet",
+        "location": {
+          "startingColumn": 44,
+          "startingLine": 61
+        }
+      },
+      {
+        "comment": "",
+        "key": "No matching runs",
+        "location": {
+          "startingColumn": 63,
+          "startingLine": 61
+        }
+      },
+      {
+        "comment": "",
+        "key": "Completed runs and their output will appear here.",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Try another search or choose All Profiles.",
+        "location": {
+          "startingColumn": 97,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Inspect its full rsync output here.",
+        "location": {
+          "startingColumn": 113,
+          "startingLine": 97
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select a run",
+        "location": {
+          "startingColumn": 48,
+          "startingLine": 97
+        }
+      },
+      {
+        "comment": "",
+        "key": "Copy Output",
+        "location": {
+          "startingColumn": 40,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "Copy complete output",
+        "location": {
+          "startingColumn": 62,
+          "startingLine": 86
+        }
+      }
+    ]
+  },
+  "version": 1
+}

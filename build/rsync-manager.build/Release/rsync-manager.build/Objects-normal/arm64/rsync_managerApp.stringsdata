@@ -1,0 +1,16 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/rsync_managerApp.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "New Sync Profile…",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 40
+        }
+      }
+    ]
+  },
+  "version": 1
+}

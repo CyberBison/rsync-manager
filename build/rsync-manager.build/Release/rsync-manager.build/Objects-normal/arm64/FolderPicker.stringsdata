@@ -1,0 +1,48 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Utilities/FolderPicker.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Choose or enter a path",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 11
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 11
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ path",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 12
+        }
+      },
+      {
+        "comment": "",
+        "key": "Choose…",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 13
+        }
+      },
+      {
+        "comment": "",
+        "key": "Choose %@ folder",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 26
+        }
+      }
+    ]
+  },
+  "version": 1
+}

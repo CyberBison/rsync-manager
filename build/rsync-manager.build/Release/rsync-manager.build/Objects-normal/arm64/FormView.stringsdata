@@ -1,0 +1,152 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/FormView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Choose what to sync and where it should go.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "New Profile",
+        "location": {
+          "startingColumn": 40,
+          "startingLine": 36
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Profile",
+        "location": {
+          "startingColumn": 56,
+          "startingLine": 36
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profile",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "Folders",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 47
+        }
+      },
+      {
+        "comment": "",
+        "key": "Behaviour",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "For example, Documents Backup",
+        "location": {
+          "startingColumn": 65,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "Name",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "Name",
+        "location": {
+          "startingColumn": 45,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "A trailing slash on the source copies its contents. Without it, rsync copies the folder itself.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 50
+        }
+      },
+      {
+        "comment": "",
+        "key": "One-way sync",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 54
+        }
+      },
+      {
+        "comment": "",
+        "key": "Advanced arguments & exclusions",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 62
+        }
+      },
+      {
+        "comment": "",
+        "key": "Destination files missing from the source can be deleted.",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 57
+        }
+      },
+      {
+        "comment": "",
+        "key": "All existing rsync flags are supported. Add exclusions here, for example --exclude='*.tmp'.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "Arguments",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "Create Profile",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Save Changes",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 76
+        }
+      }
+    ]
+  },
+  "version": 1
+}

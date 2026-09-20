@@ -1,0 +1,12 @@
+{
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Models/LogEntry.swift" : {
+    "abi-baseline-json" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_manager.abi.json",
+    "const-values" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary.swiftconstvalues",
+    "dependencies" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary.d",
+    "diagnostics" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary.dia",
+    "objc-header" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_manager-Swift.h",
+    "swiftdoc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_manager.swiftdoc",
+    "swiftmodule" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_manager.swiftmodule",
+    "swiftsourceinfo" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_manager.swiftsourceinfo"
+  }
+}

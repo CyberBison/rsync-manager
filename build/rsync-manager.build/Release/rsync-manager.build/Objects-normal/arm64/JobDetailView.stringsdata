@@ -1,0 +1,224 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/JobDetailView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "SYNC PROFILE",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "One-way sync from source to destination.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 48
+        }
+      },
+      {
+        "comment": "",
+        "key": "Syncs to",
+        "location": {
+          "startingColumn": 49,
+          "startingLine": 54
+        }
+      },
+      {
+        "comment": "",
+        "key": "Syncs to",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 59
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rsync is transferring files. Output will be available in History when the run finishes.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Stop Sync",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 78
+        }
+      },
+      {
+        "comment": "",
+        "key": "Stopping sync…",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sync in progress",
+        "location": {
+          "startingColumn": 78,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "Custom flags and exclusions are available in Profile Options.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "Source files are copied to the destination",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 90
+        }
+      },
+      {
+        "comment": "",
+        "key": "Dry run — previews changes without copying files",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "Behaviour",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 85
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Profile",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "Files absent from the source may be deleted at the destination",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 93
+        }
+      },
+      {
+        "comment": "",
+        "key": "Run this profile to see its result here.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 126
+        }
+      },
+      {
+        "comment": "",
+        "key": "No runs yet",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 125
+        }
+      },
+      {
+        "comment": "",
+        "key": "Latest activity",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "View History",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profile Options",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 158
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rsync arguments",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "Last run",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 169
+        }
+      },
+      {
+        "comment": "",
+        "key": "Direction",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 159
+        }
+      },
+      {
+        "comment": "",
+        "key": "Executable",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 160
+        }
+      },
+      {
+        "comment": "",
+        "key": "Includes behaviour flags, exclusions, and advanced options exactly as saved.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 165
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Arguments…",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "Not run yet",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 174
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rsync Argument Guide",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 188
+        }
+      }
+    ]
+  },
+  "version": 1
+}

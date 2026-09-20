@@ -1,74 +1,61 @@
-//
-//  MainListView.swift
-//  rsync-manager
-//
-//  Created by CyberBison on 23.01.2025.
-//
-
 import SwiftUI
 
 struct MainListView: View {
-    @State private var showingForm = false
-    @State private var selectedTask: SyncTask? = nil
-    @EnvironmentObject var viewModel: SyncTaskViewModel
-    let onAddTask: () -> Void
-    
+    @EnvironmentObject private var viewModel: SyncTaskViewModel
+    @Binding var selection: UUID?
+    let onAdd: () -> Void
+    let onEdit: (SyncTask) -> Void
+    let onDelete: (SyncTask) -> Void
+
     var body: some View {
-        VStack {
-            List(viewModel.tasks) { task in
-                VStack(alignment: .leading) {
-                    
-                    Text(task.name).font(.title).bold()
-                    
-                    HStack{
-                        Text("Source:").bold()
-                        Text(task.source)
-                    }
-                    HStack{
-                        Text("Destination:").bold()
-                        Text(task.destination)
-                    }
-                    if let date = task.lastSyncDate {
-                        Text("Last Sync: \(date, formatter: DateFormatter.shortDateTime)")
-                    } else {
-                        Text("Last Sync: Never")
-                    }
-                    if let status = task.lastSyncStatus {
-                        Label("Status: \(status)", systemImage: "circlebadge.fill")
-                            .foregroundColor(status == "success" ? .green : .red)
-                    }
-                    HStack{
-                        
-                        Button("Sync Now") {
-                            viewModel.runSync(task: task)
-                        }
-                        Button("Edit") {
-                            selectedTask = task
-                            showingForm = true
+        List(selection: $selection) {
+            Section("Profiles") {
+                ForEach(viewModel.tasks) { task in
+                    HStack(spacing: 10) {
+                        Image(systemName: "folder.badge.gearshape")
+                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(task.name).font(.headline).lineLimit(1)
+                            Text("\(endpointName(task.source)) → \(endpointName(task.destination))")
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            if viewModel.runningTaskID == task.id {
+                                Label("Syncing", systemImage: "arrow.triangle.2.circlepath")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            } else if let status = task.lastSyncStatus {
+                                RunStatus(status: status, usesColor: selection != task.id).font(.caption)
+                            }
                         }
                     }
+                    .padding(.vertical, 4)
+                    .tag(task.id)
+                    .contextMenu {
+                        Button("Run Sync", systemImage: "play") { viewModel.runSync(task: task) }
+                            .disabled(viewModel.runningTaskID != nil)
+                        Button("Edit Profile…", systemImage: "pencil") { onEdit(task) }
+                            .disabled(viewModel.runningTaskID == task.id)
+                        Divider()
+                        Button("Delete Profile…", systemImage: "trash", role: .destructive) { onDelete(task) }
+                            .disabled(viewModel.runningTaskID == task.id)
+                    }
+                    .accessibilityElement(children: .combine)
                 }
-                .padding()
             }
-            Button("Add Task"){
-                selectedTask = SyncTask(id: UUID(), name: "", arguments: "-av --delete", source: "", destination: "", lastSyncDate: nil, lastSyncStatus: nil, isActive: true)
-                showingForm = true
+        }
+        .listStyle(.sidebar)
+        .navigationTitle("Profiles")
+        .safeAreaInset(edge: .bottom) {
+            HStack {
+                Button("New Profile", systemImage: "plus", action: onAdd)
+                    .buttonStyle(.borderless)
+                Spacer()
+                Text("\(viewModel.tasks.count)").foregroundStyle(.secondary).monospacedDigit()
             }
             .padding()
         }
-        .navigationTitle("Task List")
-        .sheet(item: $selectedTask) { task in
-                    FormView(task: task, onDismiss: { selectedTask = nil })
-                        .environmentObject(viewModel)
-                }
     }
 }
 
-extension DateFormatter {
-    static var shortDateTime: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        return formatter
-    }
+func endpointName(_ path: String) -> String {
+    let name = (path as NSString).lastPathComponent
+    return name.isEmpty ? path : name
 }

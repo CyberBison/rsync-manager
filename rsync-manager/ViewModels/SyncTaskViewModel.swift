@@ -7,15 +7,24 @@
 
 import Foundation
 
+@MainActor
 class SyncTaskViewModel: ObservableObject {
     @Published var tasks: [SyncTask] = []
     @Published var selectedTask: SyncTask?
     @Published var logs: [LogEntry] = []
     
+    @Published private(set) var runningTaskID: UUID?
+    @Published private(set) var runStartedAt: Date?
+    @Published private(set) var isStopping = false
+    private var runningProcess: Process?
+
     private let tasksFileName = "sync_tasks.json"
     private let logsFileName = "sync_logs.json"
     
-    init() {
+    private let storageDirectory: URL?
+
+    init(storageDirectory: URL? = nil) {
+        self.storageDirectory = storageDirectory
         loadTasks()
         loadLogs()
     }
@@ -50,39 +59,48 @@ class SyncTaskViewModel: ObservableObject {
         }
     
     func runSync(task: SyncTask) {
+        guard runningTaskID == nil else { return }
+        runningTaskID = task.id
+        runStartedAt = Date()
+        isStopping = false
         do {
-            
-            // Prepare the rsync command
-            let command = """
-            /usr/bin/rsync \(task.arguments) "\(task.source)" "\(task.destination)"
-            """
-            
-
-            // Run the rsync command using ShellHelper
-            let result = try ShellHelper.runCommand(command)
-            print("Sync Result: \(result)")
-
-            let isError = result.contains("rsync error")
-            let syncStatus = isError ? "error" : "success"
-            
-            // Update the last sync date
-            if let index = tasks.firstIndex(where: { $0.id == task.id }) {
-                tasks[index].lastSyncDate = Date()
-                tasks[index].lastSyncStatus = syncStatus
+            // Keep the existing shell-based free-form arguments. Quote folder paths
+            // literally so spaces, apostrophes, and shell characters remain paths.
+            let command = "exec /usr/bin/rsync \(task.arguments) \(ShellHelper.quote(task.source)) \(ShellHelper.quote(task.destination))"
+            runningProcess = try ShellHelper.startCommand(command) { [weak self] output, exitCode in
+                guard let self else { return }
+                let cancelled = self.isStopping
+                let status = cancelled ? "cancelled" : (exitCode == 0 ? "success" : "error")
+                if let index = self.tasks.firstIndex(where: { $0.id == task.id }) {
+                    self.tasks[index].lastSyncDate = Date()
+                    self.tasks[index].lastSyncStatus = status
+                }
+                let result = cancelled ? "Sync cancelled by user.\n" + output : output
+                self.addLog(taskId: task.id, result: result, success: exitCode == 0 && !cancelled)
+                self.saveTasks()
+                self.runningTaskID = nil
+                self.runningProcess = nil
+                self.runStartedAt = nil
+                self.isStopping = false
             }
-            addLog(taskId: task.id, result: result, success: true)
         } catch {
-            print("Error running sync: \(error)")
-            
             if let index = tasks.firstIndex(where: { $0.id == task.id }) {
                 tasks[index].lastSyncDate = Date()
                 tasks[index].lastSyncStatus = "error"
             }
-            
-            addLog(taskId: task.id, result: "\(error)", success: false)
+            addLog(taskId: task.id, result: error.localizedDescription, success: false)
+            saveTasks()
+            runningTaskID = nil
+            runStartedAt = nil
         }
     }
-    
+
+    func stopSync() {
+        guard let process = runningProcess, process.isRunning else { return }
+        isStopping = true
+        process.terminate()
+    }
+
     func saveTasks() {
         let fileURL = getDocumentsDirectory().appendingPathComponent(tasksFileName)
         do {
@@ -106,7 +124,7 @@ class SyncTaskViewModel: ObservableObject {
     }
     
     private func getDocumentsDirectory() -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        storageDirectory ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
     func saveLogs() {
