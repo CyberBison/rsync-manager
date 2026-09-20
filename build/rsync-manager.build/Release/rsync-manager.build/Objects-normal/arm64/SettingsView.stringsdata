@@ -1,0 +1,56 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/SettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Rsync Manager",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 6
+        }
+      },
+      {
+        "comment": "",
+        "key": "Help",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 11
+        }
+      },
+      {
+        "comment": "",
+        "key": "Configure folders, behaviour, and exclusions in each profile. Appearance follows your Mac’s settings.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 8
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sync engine",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 7
+        }
+      },
+      {
+        "comment": "",
+        "key": "If rsync cannot access a protected folder, review the app’s permissions in System Settings.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 14
+        }
+      },
+      {
+        "comment": "",
+        "key": "Open Full Disk Access Settings",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 13
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,80 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/MainListView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Profiles",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profiles",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 12
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ → %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 19
+        }
+      },
+      {
+        "comment": "",
+        "key": "Syncing",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 22
+        }
+      },
+      {
+        "comment": "",
+        "key": "Run Sync",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 32
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Profile…",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Delete Profile…",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 51
+        }
+      },
+      {
+        "comment": "",
+        "key": "New Profile",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 48
+        }
+      }
+    ]
+  },
+  "version": 1
+}

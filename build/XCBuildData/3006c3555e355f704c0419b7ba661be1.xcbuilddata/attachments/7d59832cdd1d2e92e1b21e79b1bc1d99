@@ -1,0 +1,76 @@
+{
+  "" : {
+    "const-values" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary.swiftconstvalues",
+    "dependencies" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary.d",
+    "diagnostics" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary.dia",
+    "emit-module-dependencies" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary-emit-module.dia",
+    "pch" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync-manager-primary.swiftdeps"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Models/LogEntry.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/LogEntry.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/LogEntry.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/LogEntry.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Models/SyncTask.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SyncTask.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SyncTask.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SyncTask.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Utilities/FolderPicker.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/FolderPicker.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/FolderPicker.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/FolderPicker.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Utilities/ShellHelper.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/ShellHelper.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/ShellHelper.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/ShellHelper.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/ViewModels/SyncTaskViewModel.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SyncTaskViewModel.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SyncTaskViewModel.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SyncTaskViewModel.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/ContentView.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/FormView.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/FormView.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/FormView.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/FormView.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/JobDetailView.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/JobDetailView.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/JobDetailView.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/JobDetailView.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/LogsView.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/LogsView.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/LogsView.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/LogsView.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/MainListView.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/MainListView.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/MainListView.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/MainListView.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/SettingsView.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/SettingsView.o"
+  },
+  "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/rsync_managerApp.swift" : {
+    "index-unit-output-path" : "/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_managerApp.o",
+    "llvm-bc" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_managerApp.bc",
+    "object" : "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/Objects-normal/arm64/rsync_managerApp.o"
+  }
+}

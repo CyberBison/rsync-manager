@@ -1,0 +1,1 @@
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/Release/rsync-manager.app

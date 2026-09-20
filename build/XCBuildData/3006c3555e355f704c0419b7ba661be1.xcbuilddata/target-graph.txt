@@ -1,0 +1,2 @@
+Target dependency graph (1 target)
+Target 'rsync-manager' in project 'rsync-manager' (no dependencies)

@@ -17,9 +17,9 @@ This project is still in its early stages, and more features are being actively 
 ### **Key Features**
 - **Task Management**: Create and configure multiple `rsync` tasks effortlessly.
 - **Easy Folder Selection**: Select source and destination directories via a clean user interface.
-- **Manual Execution**: Execute backup tasks directly from the app.
+- **Manual Execution**: Run and stop syncs directly from the app.
+- **Sync History**: Inspect, filter, search, and copy output from previous runs.
 - **Planned Enhancements**:
-  - **Sync History**: Track the last execution time for each task.
   - **Scheduled Backups**: Automate tasks on a customizable schedule.
   - **Notifications**: Get notified of sync progress and errors.
 
@@ -27,7 +27,8 @@ This project is still in its early stages, and more features are being actively 
 
 ## Requirements
 
-- **macOS**: Version 14.6 or higher
+- **macOS**: Version 27 or higher for the redesigned source build
+- **Xcode**: Version 27 with the macOS 27 SDK
 - **Homebrew**: For easy installation (optional but recommended)
 
 ---
@@ -60,11 +61,20 @@ This project is still in its early stages, and more features are being actively 
 
 ## Getting Started
 
-1. Launch `rsync-manager` from your Applications folder or via Spotlight.
-2. Use the **Add Task** button to define your first backup task:
-   - Select the source folder.
-   - Select the destination folder.
-3. Run tasks with a single click or edit existing tasks to fine-tune settings.
+1. Create a **New Profile** from the sidebar or with **⇧⌘N**.
+2. Enter a name and choose or type the source and destination paths. A trailing slash on the source copies its contents instead of the folder itself.
+3. Expand **Advanced arguments & exclusions** to adjust the existing rsync flags. The default remains `-av --delete`; this can remove destination files that are absent from the source.
+4. Select a profile and use **Run Sync** (**⌘R**). The app remains responsive while running; **Stop Sync** cancels the active process.
+5. Open **History** (**⇧⌘H**) to filter runs, search output, and copy complete logs. Open **Profile Options** (**⌥⌘I**) to inspect saved arguments.
+6. Right-click a profile to edit or delete it. Deleting a profile preserves its files and history.
+
+The interface uses native macOS navigation, inspectors, sheets, and Liquid Glass controls. Appearance follows the system. Existing `sync_tasks.json` and `sync_logs.json` formats and storage locations are retained; older profiles without arguments still load with their original defaults.
+
+### Development checks
+
+Build and test with the shared `rsync-manager` scheme in Xcode 27. Unit tests cover legacy decoding, persistence, literal folder paths, process exit status, cancellation, and an actual sync between temporary folders. UI tests use isolated temporary data and capture the profile, inspector, editor, history, and Settings in Light and Dark appearances at 760- and 1280-point window widths. Test appearance and storage overrides are compiled only in Debug builds.
+
+Run output is available after completion; the existing engine does not supply live file progress or persist durations. No estimated percentages or historical durations are invented.
 
 ---
 

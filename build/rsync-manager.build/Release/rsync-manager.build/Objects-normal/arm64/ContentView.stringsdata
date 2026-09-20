@@ -1,0 +1,120 @@
+{
+  "source": "/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Delete profile?",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "Your next sync starts here",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select a profile",
+        "location": {
+          "startingColumn": 88,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Create a profile to keep a folder backed up or copy files to another destination.",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 31
+        }
+      },
+      {
+        "comment": "",
+        "key": "Choose a profile in the sidebar to see its folders and recent activity.",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 32
+        }
+      },
+      {
+        "comment": "",
+        "key": "New Profile",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Stop Sync",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Run Sync",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 48
+        }
+      },
+      {
+        "comment": "",
+        "key": "History",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profile Options",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 57
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profile Options",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "Delete Profile",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "“%@” will be removed. Its folders, files, and run history will be kept.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 108
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,13 @@
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Models/LogEntry.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Models/SyncTask.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Utilities/FolderPicker.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Utilities/ShellHelper.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/ViewModels/SyncTaskViewModel.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/ContentView.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/FormView.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/JobDetailView.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/LogsView.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/MainListView.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/Views/SettingsView.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/rsync-manager/rsync_managerApp.swift
+/Users/cyberbison/Dev/src/dev.cyberbison/rsync-manager/build/rsync-manager.build/Release/rsync-manager.build/DerivedSources/GeneratedAssetSymbols.swift
