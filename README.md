@@ -21,6 +21,15 @@ Create reusable sync profiles, choose source and destination folders, and run ba
 
 The app is under active development. Scheduled backups and notifications are planned enhancements.
 
+### **Key Features**
+- **Task Management**: Create and configure multiple `rsync` tasks effortlessly.
+- **Easy Folder Selection**: Select source and destination directories via a clean user interface.
+- **Manual Execution**: Run and stop syncs directly from the app.
+- **Sync History**: Inspect, filter, search, and copy output from previous runs.
+- **Planned Enhancements**:
+  - **Scheduled Backups**: Automate tasks on a customizable schedule.
+  - **Notifications**: Get notified of sync progress and errors.
+
 ---
 
 ## Requirements
