@@ -1,18 +1,25 @@
-
 # rsync-manager
 
-**Author**: CyberBison  
-**License**: GPL-3.0  
-**Current version**: 1.0.2
-**Changelog**: [View here](https://rsync.cyberbison.dev/changelog)
+**A native macOS app for managing rsync backups and folder synchronization.**
 
-This project is still in its early stages, and more features are being actively developed.
+Create reusable sync profiles, choose source and destination folders, and run backups from a familiar macOS interface. Review each profile’s behavior before running it, then inspect the output in your sync history.
 
----
+[Website](https://rsync.cyberbison.dev) · [Changelog](https://rsync.cyberbison.dev/changelog) · [Report an issue](https://github.com/CyberBison/rsync-manager/issues)
 
-## Overview
+![rsync-manager on macOS showing saved profiles, source and destination folders, deletion behavior, and the latest completed sync](docs/screenshots/app-light.png)
 
-`rsync-manager` is a lightweight macOS app designed to simplify `rsync` backups. It provides an intuitive interface for creating, editing, and executing backup tasks, making it easier to manage your data synchronization workflows without needing to remember complex terminal commands.
+*The Documents Backup profile in Light appearance, with its folder paths, sync behavior, and latest activity in one view. Appearance follows your macOS settings.*
+
+## Features
+
+- **Reusable profiles**: Keep multiple backup and synchronization tasks organized in the sidebar.
+- **Folder selection**: Choose source and destination folders or enter their paths directly.
+- **Manual sync controls**: Run and stop syncs directly from the app.
+- **Custom arguments and exclusions**: Configure rsync flags for each profile and inspect them in Profile Options.
+- **Sync history**: Inspect, filter, search, and copy output from previous runs.
+- **Native macOS interface**: Use keyboard shortcuts, inspectors, and system Light and Dark appearances.
+
+The app is under active development. Scheduled backups and notifications are planned enhancements.
 
 ### **Key Features**
 - **Task Management**: Create and configure multiple `rsync` tasks effortlessly.
