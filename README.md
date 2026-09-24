@@ -4,7 +4,7 @@
 
 Create reusable sync profiles, choose source and destination folders, and run backups from a familiar macOS interface. Review each profile’s behavior before running it, then inspect the output in your sync history.
 
-[Website](https://rsync.cyberbison.dev) · [Changelog](https://rsync.cyberbison.dev/changelog) · [Report an issue](https://github.com/CyberBison/rsync-manager/issues)
+[Website](https://rsync.cyberbison.dev) · [Support rsync-manager](https://ko-fi.com/cyberbison) · [Report an issue](https://github.com/CyberBison/rsync-manager/issues)
 
 ![rsync-manager on macOS showing saved profiles, source and destination folders, deletion behavior, and the latest completed sync](docs/screenshots/app-light.png)
 
