@@ -88,4 +88,89 @@ struct rsync_managerTests {
         #expect(restored.tasks.first?.id == original.id)
         #expect(restored.tasks.first?.arguments == "--dry-run")
     }
+
+    @MainActor @Test func folderAccessPathNormalizationAndRemoteDetection() throws {
+        let suiteName = "FolderSandboxTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let manager = FolderSandboxAccessManager(userDefaults: defaults)
+        let realHome = FolderSandboxAccessManager.realUserHomeDirectoryURL().path
+
+        #expect(manager.normalizePath("~") == realHome)
+        #expect(manager.normalizePath("~/Documents/") == "\(realHome)/Documents")
+        #expect(manager.normalizePath("  ~/Documents///  ") == "\(realHome)/Documents")
+        #expect(manager.normalizePath("/") == "/")
+        #expect(manager.normalizePath("///") == "/")
+
+        #expect(manager.resolvedCommandPath(for: "~") == realHome)
+        #expect(manager.resolvedCommandPath(for: "~/Documents/") == "\(realHome)/Documents/")
+        #expect(manager.resolvedCommandPath(for: "/Volumes/Drive/") == "/Volumes/Drive/")
+        #expect(manager.resolvedCommandPath(for: "backup@studio.local:~/dir") == "backup@studio.local:~/dir")
+        #expect(manager.resolvedCommandPath(for: "rsync://host/mod") == "rsync://host/mod")
+
+        #expect(FolderSandboxAccessManager.isLocalPath("/Users/example/Documents"))
+        #expect(FolderSandboxAccessManager.isLocalPath("~"))
+        #expect(FolderSandboxAccessManager.isLocalPath("~/Documents/"))
+        #expect(FolderSandboxAccessManager.isLocalPath("/Volumes/My:Drive/folder"))
+        #expect(!FolderSandboxAccessManager.isLocalPath(""))
+        #expect(!FolderSandboxAccessManager.isLocalPath("   "))
+        #expect(!FolderSandboxAccessManager.isLocalPath("backup@studio.local:/archive/projects"))
+        #expect(!FolderSandboxAccessManager.isLocalPath("studio.local:projects"))
+        #expect(!FolderSandboxAccessManager.isLocalPath("studio.local::module"))
+        #expect(!FolderSandboxAccessManager.isLocalPath("[::1]:/archive/projects"))
+        #expect(!FolderSandboxAccessManager.isLocalPath("rsync://backup@studio.local/module"))
+    }
+
+    @MainActor @Test func folderAccessAncestorAndSymlinkCoverage() throws {
+        let suiteName = "FolderSandboxTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let manager = FolderSandboxAccessManager(userDefaults: defaults)
+
+        #expect(manager.isPath("/Users/a/Documents", coveredBy: "/Users/a/Documents"))
+        #expect(manager.isPath("/Users/a/Documents/", coveredBy: "/Users/a/Documents"))
+        #expect(manager.isPath("/Users/a/Documents/Work/Report", coveredBy: "/Users/a/Documents"))
+        #expect(!manager.isPath("/Users/a/Documents", coveredBy: "/Users/a/Doc"))
+        #expect(!manager.isPath("/Users/a/Other", coveredBy: "/Users/a/Documents"))
+        #expect(manager.isPath("/Users/a/Documents", coveredBy: "/"))
+        #expect(manager.isPath("/tmp/nonexistent-test-dir", coveredBy: "/private/tmp"))
+    }
+
+    @MainActor @Test func folderAccessBookmarksPersistAndActivateAncestors() throws {
+        let suiteName = "FolderSandboxTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("FolderBookmark-\(UUID().uuidString)", isDirectory: true)
+        let parent = root.appendingPathComponent("parent", isDirectory: true)
+        let child = parent.appendingPathComponent("child", isDirectory: true)
+        let sibling = root.appendingPathComponent("sibling", isDirectory: true)
+        try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sibling, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let writer = FolderSandboxAccessManager(userDefaults: defaults)
+        writer.bookmarkDirectory(parent)
+
+        let relaunched = FolderSandboxAccessManager(userDefaults: defaults)
+        #expect(relaunched.activateSavedAccess(forPath: parent.path))
+        #expect(relaunched.activateSavedAccess(forPath: child.path))
+        #expect(relaunched.activateSavedAccess(forPath: child.path + "/"))
+        #expect(!relaunched.activateSavedAccess(forPath: sibling.path))
+    }
+
+    @MainActor @Test func folderAccessEnsureBypassesInTests() throws {
+        let suiteName = "FolderSandboxTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let manager = FolderSandboxAccessManager(userDefaults: defaults, bypassPermissionPrompts: true)
+        var completionResult: Bool?
+        manager.ensureDirectoriesAccess(paths: ["/nonexistent/source", "/nonexistent/destination"]) { granted in
+            completionResult = granted
+        }
+        #expect(completionResult == true)
+    }
 }

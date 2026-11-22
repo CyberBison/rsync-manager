@@ -11,6 +11,7 @@ struct FormView: View {
     @State private var source: String
     @State private var destination: String
     @State private var showingAdvanced = false
+    @State private var isRequestingAccess = false
     @FocusState private var nameFocused: Bool
 
     init(task: SyncTask? = nil, height: CGFloat = 620, onDismiss: @escaping () -> Void, onSave: @escaping (UUID) -> Void = { _ in }) {
@@ -74,7 +75,7 @@ struct FormView: View {
                 Button("Cancel", action: onDismiss).keyboardShortcut(.cancelAction)
                 Spacer()
                 Button(task == nil ? "Create Profile" : "Save Changes", action: save)
-                    .buttonStyle(.glassProminent).keyboardShortcut(.defaultAction).disabled(!canSave)
+                    .buttonStyle(.glassProminent).keyboardShortcut(.defaultAction).disabled(!canSave || isRequestingAccess)
             }.padding(20)
         }
         .frame(width: 580, height: height)
@@ -82,14 +83,23 @@ struct FormView: View {
     }
 
     private func save() {
-        if let task {
-            viewModel.updateTask(task, name: name, arguments: arguments, source: source, destination: destination)
-            onSave(task.id)
-        } else {
-            viewModel.addTask(name: name, arguments: arguments, source: source, destination: destination)
-            if let id = viewModel.tasks.last?.id { onSave(id) }
+        guard !isRequestingAccess else { return }
+        let commitSave: @MainActor () -> Void = {
+            if let task {
+                viewModel.updateTask(task, name: name, arguments: arguments, source: source, destination: destination)
+                onSave(task.id)
+            } else {
+                viewModel.addTask(name: name, arguments: arguments, source: source, destination: destination)
+                if let id = viewModel.tasks.last?.id { onSave(id) }
+            }
+            viewModel.saveTasks()
+            onDismiss()
         }
-        viewModel.saveTasks()
-        onDismiss()
+        isRequestingAccess = true
+        viewModel.folderAccessManager.ensureDirectoriesAccess(paths: [source, destination]) { granted in
+            isRequestingAccess = false
+            guard granted else { return }
+            commitSave()
+        }
     }
 }
