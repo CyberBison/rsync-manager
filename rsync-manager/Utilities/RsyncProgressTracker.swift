@@ -10,44 +10,25 @@ import Foundation
 struct RsyncProgressTracker {
     private(set) var progress: Double?
     private(set) var currentTransferFile: String?
+    private(set) var formattedOutput = ""
     private var totalEntries: Int?
     private var completedEntries = 0
-    private var currentFileFraction = 0.0
 
-    private var completedLines: [String] = []
     private var currentSegment = ""
     private var pendingCarriageReturn = false
-
-    var formattedOutput: String {
-        var lines = completedLines
-        if !currentSegment.isEmpty {
-            lines.append(currentSegment)
-            return lines.joined(separator: "\n")
-        }
-        guard !lines.isEmpty else { return "" }
-        return lines.joined(separator: "\n") + "\n"
-    }
 
     mutating func ingest(_ chunk: String) {
         for scalar in chunk.unicodeScalars {
             switch scalar {
             case "\r":
-                if !currentSegment.isEmpty {
-                    parseLine(currentSegment)
+                if !pendingCarriageReturn {
+                    updateTransferProgress(from: currentSegment)
                 }
                 pendingCarriageReturn = true
             case "\n":
-                let wasCarriageReturn = pendingCarriageReturn
-                pendingCarriageReturn = false
-                if !wasCarriageReturn || !currentSegment.isEmpty {
-                    if !wasCarriageReturn {
-                        parseLine(currentSegment)
-                    }
-                    completedLines.append(currentSegment)
-                } else {
-                    completedLines.append("")
-                }
+                appendOutputLine(ending: "\n")
                 currentSegment = ""
+                pendingCarriageReturn = false
             default:
                 if pendingCarriageReturn {
                     currentSegment = ""
@@ -59,15 +40,18 @@ struct RsyncProgressTracker {
     }
 
     mutating func finish() {
-        if !currentSegment.isEmpty && !pendingCarriageReturn {
-            parseLine(currentSegment)
-        }
+        guard !currentSegment.isEmpty else { return }
+        appendOutputLine(ending: "")
+        currentSegment = ""
+        pendingCarriageReturn = false
     }
 
-    private mutating func parseLine(_ line: String) {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
+    private mutating func appendOutputLine(ending: String) {
+        // Transfer status rows drive the progress indicator. History grows by complete output lines.
+        guard !updateTransferProgress(from: currentSegment) else { return }
+        formattedOutput += currentSegment + ending
 
+        let trimmed = currentSegment.trimmingCharacters(in: .whitespaces)
         if let total = Self.parseTransferStarting(trimmed) {
             totalEntries = total
             if total <= 1 {
@@ -75,33 +59,42 @@ struct RsyncProgressTracker {
             } else if progress == nil {
                 progress = 0.0
             }
-            return
-        }
-
-        if let (checkedIndex, total) = Self.parseToCheck(trimmed) {
-            totalEntries = total
-            let denominator = max(1, total - 1)
-            completedEntries = max(completedEntries, min(checkedIndex, denominator))
-            currentFileFraction = 0
-            progress = min(1.0, Double(completedEntries) / Double(denominator))
-            return
-        }
-
-        if let filePercentage = Self.parseInProgressPercentage(rawLine: line, trimmed: trimmed) {
-            currentFileFraction = Double(filePercentage) / 100.0
-            if let total = totalEntries, total > 1 {
-                progress = min(1.0, (Double(completedEntries) + currentFileFraction) / Double(total - 1))
-            } else {
-                progress = min(1.0, max(0.0, currentFileFraction))
-            }
-            return
-        }
-
-        if !trimmed.hasPrefix("sent "),
-           !trimmed.hasPrefix("total size is "),
-           !trimmed.hasPrefix("building file list") {
+        } else if !trimmed.isEmpty,
+                  !trimmed.hasPrefix("sent "),
+                  !trimmed.hasPrefix("total size is "),
+                  !trimmed.hasPrefix("building file list"),
+                  trimmed != "sending incremental file list",
+                  trimmed != "receiving incremental file list" {
             currentTransferFile = trimmed
         }
+    }
+
+    @discardableResult
+    private mutating func updateTransferProgress(from line: String) -> Bool {
+        let tokens = line.split(whereSeparator: \.isWhitespace)
+        guard tokens.count >= 4,
+              tokens[0].first?.isNumber == true,
+              tokens[1].hasSuffix("%"),
+              let percentage = Int(tokens[1].dropLast()),
+              (0...100).contains(percentage),
+              tokens[2].hasSuffix("B/s"),
+              tokens[3].contains(":") else { return false }
+
+        if tokens.count > 4, let counter = tokens.last,
+           let (checked, total) = Self.parseCheckCount(counter) {
+            totalEntries = total
+            let denominator = max(1, total - 1)
+            completedEntries = max(completedEntries, min(checked, denominator))
+            progress = min(1.0, Double(completedEntries) / Double(denominator))
+        } else {
+            let fileFraction = Double(percentage) / 100.0
+            if let total = totalEntries, total > 1 {
+                progress = min(1.0, (Double(completedEntries) + fileFraction) / Double(total - 1))
+            } else {
+                progress = fileFraction
+            }
+        }
+        return true
     }
 
     private static func parseTransferStarting(_ trimmed: String) -> Int? {
@@ -112,30 +105,19 @@ struct RsyncProgressTracker {
         return Int(firstToken)
     }
 
-    private static func parseToCheck(_ trimmed: String) -> (Int, Int)? {
-        guard let range = trimmed.range(of: "to-check=") else { return nil }
-        let after = trimmed[range.upperBound...]
-        let token = after.prefix { $0.isNumber || $0 == "/" }
-        let parts = token.split(separator: "/")
+    private static func parseCheckCount(_ counter: Substring) -> (Int, Int)? {
+        let field = counter.split(separator: "=", maxSplits: 1)
+        guard field.count == 2, field[1].hasSuffix(")") else { return nil }
+        let parts = field[1].dropLast().split(separator: "/")
         guard parts.count == 2,
               let checked = Int(parts[0]),
               let total = Int(parts[1]),
-              total > 0 else { return nil }
-        return (checked, total)
-    }
-
-    private static func parseInProgressPercentage(rawLine: String, trimmed: String) -> Int? {
-        guard !trimmed.contains("to-check=") else { return nil }
-        let tokens = trimmed.split(whereSeparator: \.isWhitespace)
-        guard tokens.count >= 2,
-              let pctToken = tokens.first(where: { $0.hasSuffix("%") }),
-              let pct = Int(pctToken.dropLast()),
-              (0...100).contains(pct) else { return nil }
-        let hasRate = trimmed.contains("B/s")
-        let startsWithWhitespaceAndBytes = (rawLine.first?.isWhitespace ?? false) &&
-            Int64(tokens[0].replacingOccurrences(of: ",", with: "")) != nil
-        guard hasRate || startsWithWhitespaceAndBytes else { return nil }
-        return pct
+              total > 0, (0...total).contains(checked) else { return nil }
+        switch field[0] {
+        case "to-check": return (checked, total)
+        case "to-chk", "ir-chk": return (total - checked, total)
+        default: return nil
+        }
     }
 }
 
@@ -160,9 +142,9 @@ extension SyncTaskViewModel {
                 output: tracker.formattedOutput
             )
         }
-        let finalOutput: @MainActor (String) -> String = { output in
+        let finalOutput: @MainActor (String) -> String = { _ in
             tracker.finish()
-            return tracker.formattedOutput.isEmpty ? output : tracker.formattedOutput
+            return tracker.formattedOutput
         }
         let finalizeLog: @MainActor (String, Bool) -> Void = { [weak self] result, success in
             self?.finalizeProgressLog(logID: logID, taskID: task.id, result: result, success: success)

@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import rsync_manager
 
@@ -47,25 +49,64 @@ struct rsync_managerTests {
         #expect(code != 0)
     }
 
-    @Test func progressTrackerCalculatesPercentageAndNormalizesCarriageReturns() {
+    @Test func progressTrackerUpdatesPercentageWithoutRewritingHistory() {
         var tracker = RsyncProgressTracker()
         tracker.ingest("Transfer starting: 3 files\nfile1.txt\n 32768 50% 32.00KB/s 00:00:01\r")
         #expect(tracker.currentTransferFile == "file1.txt")
         #expect(tracker.progress == 0.25)
+        #expect(tracker.formattedOutput == "Transfer starting: 3 files\nfile1.txt\n")
 
-        tracker.ingest(" 65536 100% 64.00KB/s 00:00:01 (xfer#1, to-check=1/3)\nfile2.txt\n")
-        #expect(tracker.currentTransferFile == "file2.txt")
+        tracker.ingest(" 65536 100% 64.00KB/s 00:00:01 (xfer#1, to-check=1/3)\nfile2")
+        #expect(tracker.currentTransferFile == "file1.txt")
         #expect(tracker.progress == 0.50)
+        #expect(tracker.formattedOutput == "Transfer starting: 3 files\nfile1.txt\n")
 
-        tracker.ingest(" 32768 50% 32.00KB/s 00:00:01\r")
+        tracker.ingest(" to-check=1/3.txt\n\r 32.00K 50% 32.00KB/s 00:00:01\r")
+        #expect(tracker.currentTransferFile == "file2 to-check=1/3.txt")
         #expect(tracker.progress == 0.75)
-        #expect(tracker.formattedOutput == """
-        Transfer starting: 3 files
-        file1.txt
-         65536 100% 64.00KB/s 00:00:01 (xfer#1, to-check=1/3)
-        file2.txt
-         32768 50% 32.00KB/s 00:00:01
-        """)
+        #expect(tracker.formattedOutput == "Transfer starting: 3 files\nfile1.txt\nfile2 to-check=1/3.txt\n")
+
+        tracker.ingest(" 64.00K 100% 64.00KB/s 00:00:01 (xfr#2, to-chk=0/3)\r")
+        tracker.ingest("\nsent 65536 bytes\r\nrsync error: incomplete transfer")
+        tracker.finish()
+        #expect(tracker.progress == 1.0)
+        #expect(tracker.formattedOutput == "Transfer starting: 3 files\nfile1.txt\nfile2 to-check=1/3.txt\nsent 65536 bytes\nrsync error: incomplete transfer")
+    }
+
+    @MainActor @Test func historyKeepsScrollPositionWhenOutputGrows() throws {
+        let output = (1...100).map { "File \($0) " + String(repeating: "x", count: 150) + "\n" }.joined()
+        let host = NSHostingView(rootView: RunOutputView(output: output))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 240),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        defer { window.contentView = nil }
+        window.contentView = host
+        window.layoutIfNeeded()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+
+        let scrollView = try #require(outputScrollView(in: host))
+        let textView = try #require(scrollView.documentView as? NSTextView)
+        let clipView = scrollView.contentView
+        #expect(textView.frame.width > clipView.bounds.width)
+        #expect(textView.frame.height > clipView.bounds.height)
+        let selection = NSRange(location: 40, length: 16)
+        textView.setSelectedRange(selection)
+        clipView.scroll(to: CGPoint(x: 200, y: 450))
+        scrollView.reflectScrolledClipView(clipView)
+        let origin = clipView.bounds.origin
+        #expect(origin.x > 0 && origin.y > 0)
+
+        let updatedOutput = output + "Newly synced file\n"
+        host.rootView = RunOutputView(output: updatedOutput)
+        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+
+        #expect(textView.string == updatedOutput)
+        #expect(clipView.bounds.origin == origin)
+        #expect(textView.selectedRange() == selection)
+    }
+
+    @MainActor private func outputScrollView(in view: NSView) -> NSScrollView? {
+        if let scrollView = view as? NSScrollView { return scrollView }
+        return view.subviews.lazy.compactMap { outputScrollView(in: $0) }.first
     }
 
     @MainActor @Test func runningSyncUpdatesLatestActivityAndHistoryImmediately() async throws {
@@ -106,6 +147,8 @@ struct rsync_managerTests {
         #expect(model.tasks.first?.lastSyncStatus == "success")
         #expect(model.logs.last?.displayStatus == "success")
         #expect(model.logs.last?.success == true)
+        #expect(model.logs.last?.result.contains("sample.bin\n") == true)
+        #expect(model.logs.last?.result.contains("to-check=") == false)
     }
 
     @MainActor @Test func staleRunningStateResetsOnLoad() throws {

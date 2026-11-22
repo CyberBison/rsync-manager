@@ -35,6 +35,7 @@ struct LogsView: View {
     }
 
     var body: some View {
+        let logs = filteredLogs
         VStack(spacing: 0) {
             HStack {
                 Text("Sync History").font(.title2.weight(.semibold))
@@ -69,7 +70,7 @@ struct LogsView: View {
                     }
                 }.padding(.horizontal, 20).padding(.bottom, 16)
             }
-            if filteredLogs.isEmpty {
+            if logs.isEmpty {
                 ContentUnavailableView {
                     Label(search.isEmpty ? "No history yet" : "No matching runs", systemImage: "clock.arrow.circlepath")
                 } description: {
@@ -77,7 +78,7 @@ struct LogsView: View {
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 HSplitView {
-                    List(filteredLogs, selection: $selectedLogID) { log in
+                    List(logs, selection: $selectedLogID) { log in
                         VStack(alignment: .leading, spacing: 7) {
                             Text(taskName(log)).font(.headline).lineLimit(1)
                             RunStatus(status: log.displayStatus,
@@ -87,7 +88,7 @@ struct LogsView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }.padding(.vertical, 6).tag(log.id)
                     }.frame(minWidth: 210, idealWidth: 240, maxWidth: 300)
-                    if let log = selectedLog {
+                    if let log = logs.first(where: { $0.id == selectedLogID }) {
                         VStack(alignment: .leading, spacing: 0) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 5) {
@@ -103,12 +104,18 @@ struct LogsView: View {
                                 }.labelStyle(.iconOnly).help("Copy complete output")
                             }.padding(16)
                             Divider()
-                            ScrollView([.horizontal, .vertical]) {
-                                Text(log.result.isEmpty ? "Rsync finished without output." : log.result)
-                                    .font(.system(.body, design: .monospaced)).textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .topLeading).padding(16)
-                            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                            RunOutputView(output: log.result)
+                                .id(log.id)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .background(.background)
+                                .overlay(alignment: .topLeading) {
+                                    if log.result.isEmpty {
+                                        Text(isRunningLog(log) ? "Waiting for rsync output…" : "Rsync finished without output.")
+                                            .font(.system(.body, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                            .padding(16)
+                                    }
+                                }
                         }.frame(minWidth: 340)
                     } else {
                         ContentUnavailableView("Select a run", systemImage: "text.alignleft", description: Text("Inspect its full rsync output here."))
@@ -128,5 +135,58 @@ struct LogsView: View {
         .onChange(of: search) { _, _ in
             if selectedLog == nil { selectedLogID = filteredLogs.first?.id }
         }
+    }
+}
+
+struct RunOutputView: NSViewRepresentable {
+    let output: String
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSTextView.scrollableTextView()
+        scrollView.hasHorizontalScroller = true
+        scrollView.drawsBackground = false
+        if let textView = scrollView.documentView as? NSTextView {
+            let unboundedSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+            textView.isEditable = false
+            textView.isRichText = false
+            textView.drawsBackground = false
+            textView.isHorizontallyResizable = true
+            textView.maxSize = unboundedSize
+            textView.autoresizingMask = []
+            textView.textContainer?.widthTracksTextView = false
+            textView.textContainer?.containerSize = unboundedSize
+            textView.textContainerInset = NSSize(width: 11, height: 16)
+            textView.setAccessibilityIdentifier("Run output")
+        }
+        return scrollView
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let textView = scrollView.documentView as? NSTextView,
+              let textStorage = textView.textStorage else { return }
+        let previous = context.coordinator.output
+        guard previous != output else { return }
+        context.coordinator.output = output
+
+        let clipView = scrollView.contentView
+        let origin = clipView.bounds.origin
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular),
+            .foregroundColor: NSColor.textColor
+        ]
+        if output.hasPrefix(previous) {
+            let appended = String(output.dropFirst(previous.count))
+            textStorage.append(NSAttributedString(string: appended, attributes: attributes))
+        } else {
+            textStorage.setAttributedString(NSAttributedString(string: output, attributes: attributes))
+        }
+        clipView.scroll(to: origin)
+        scrollView.reflectScrolledClipView(clipView)
+    }
+
+    final class Coordinator {
+        var output = ""
     }
 }

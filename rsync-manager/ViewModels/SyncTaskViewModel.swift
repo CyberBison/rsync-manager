@@ -46,9 +46,9 @@ class SyncTaskViewModel: ObservableObject {
     }
 
     func applyProgressUpdate(_ progress: Double?, file: String?, logID: UUID, output: String) {
-        syncProgress = progress
-        currentTransferFile = file
-        if let logIndex = logs.firstIndex(where: { $0.id == logID }) {
+        if syncProgress != progress { syncProgress = progress }
+        if currentTransferFile != file { currentTransferFile = file }
+        if let logIndex = logs.firstIndex(where: { $0.id == logID }), logs[logIndex].result != output {
             logs[logIndex].result = output
         }
     }
