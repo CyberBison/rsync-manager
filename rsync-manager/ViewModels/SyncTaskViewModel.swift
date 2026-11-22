@@ -17,6 +17,58 @@ class SyncTaskViewModel: ObservableObject {
     @Published private(set) var runStartedAt: Date?
     @Published private(set) var isStopping = false
     private var runningProcess: Process?
+    @Published private(set) var syncProgress: Double?
+    @Published private(set) var currentTransferFile: String?
+    @Published private(set) var activeLogID: UUID?
+
+    var syncProgressPercentage: Int? {
+        syncProgress.map { Int(($0 * 100).rounded()) }
+    }
+
+    func beginProgressLog(taskID: UUID, startedAt: Date) -> UUID {
+        syncProgress = 0.0
+        currentTransferFile = nil
+        if let index = tasks.firstIndex(where: { $0.id == taskID }) {
+            tasks[index].lastSyncDate = startedAt
+            tasks[index].lastSyncStatus = "running"
+        }
+        let newLog = LogEntry(
+            id: UUID(),
+            timestamp: startedAt,
+            taskId: taskID,
+            result: "",
+            success: false,
+            status: "running"
+        )
+        logs.append(newLog)
+        activeLogID = newLog.id
+        return newLog.id
+    }
+
+    func applyProgressUpdate(_ progress: Double?, file: String?, logID: UUID, output: String) {
+        syncProgress = progress
+        currentTransferFile = file
+        if let logIndex = logs.firstIndex(where: { $0.id == logID }) {
+            logs[logIndex].result = output
+        }
+    }
+
+    func finalizeProgressLog(logID: UUID, taskID: UUID, result: String, success: Bool) {
+        if let logIndex = logs.firstIndex(where: { $0.id == logID }) {
+            logs[logIndex].result = result
+            logs[logIndex].success = success
+            logs[logIndex].status = nil
+            saveLogs()
+        } else {
+            addLog(taskId: taskID, result: result, success: success)
+        }
+    }
+
+    func resetProgressState() {
+        syncProgress = nil
+        currentTransferFile = nil
+        activeLogID = nil
+    }
 
     private let tasksFileName = "sync_tasks.json"
     private let logsFileName = "sync_logs.json"
@@ -60,38 +112,66 @@ class SyncTaskViewModel: ObservableObject {
     
     func runSync(task: SyncTask) {
         guard runningTaskID == nil else { return }
+        ensureLocalPathsAccess([task.source, task.destination]) { [weak self] granted in
+            guard let self, granted else { return }
+            self.executeSyncProcess(task: task)
+        }
+    }
+
+    private func executeSyncProcess(task: SyncTask) {
+        guard runningTaskID == nil else { return }
+        let startDate = Date()
         runningTaskID = task.id
-        runStartedAt = Date()
+        runStartedAt = startDate
         isStopping = false
+        let progressSession = beginRealtimeProgress(for: task, startedAt: startDate)
         do {
-            // Keep the existing shell-based free-form arguments. Quote folder paths
-            // literally so spaces, apostrophes, and shell characters remain paths.
-            let command = "exec /usr/bin/rsync \(task.arguments) \(ShellHelper.quote(task.source)) \(ShellHelper.quote(task.destination))"
-            runningProcess = try ShellHelper.startCommand(command) { [weak self] output, exitCode in
+            let resolvedSource = resolvedLocalPath(task.source)
+            let resolvedDestination = resolvedLocalPath(task.destination)
+            let prepared = try prepareSSHExecution(for: task, source: resolvedSource, destination: resolvedDestination)
+            let command = progressSession?.decorateCommand(prepared.command) ?? prepared.command
+            runningProcess = try ShellHelper.startCommand(
+                command,
+                environment: prepared.environment,
+                cleanup: prepared.cleanup,
+                onOutput: progressSession?.onOutput
+            ) { [weak self] output, exitCode in
                 guard let self else { return }
                 let cancelled = self.isStopping
                 let status = cancelled ? "cancelled" : (exitCode == 0 ? "success" : "error")
+                let finalOutput = progressSession?.finalOutput(output) ?? output
+                let result = cancelled ? "Sync cancelled by user.\n" + finalOutput : finalOutput
+                let succeeded = exitCode == 0 && !cancelled
                 if let index = self.tasks.firstIndex(where: { $0.id == task.id }) {
                     self.tasks[index].lastSyncDate = Date()
                     self.tasks[index].lastSyncStatus = status
                 }
-                let result = cancelled ? "Sync cancelled by user.\n" + output : output
-                self.addLog(taskId: task.id, result: result, success: exitCode == 0 && !cancelled)
+                if let finalizeLog = progressSession?.finalizeLog {
+                    finalizeLog(result, succeeded)
+                } else {
+                    self.addLog(taskId: task.id, result: result, success: succeeded)
+                }
                 self.saveTasks()
                 self.runningTaskID = nil
                 self.runningProcess = nil
                 self.runStartedAt = nil
                 self.isStopping = false
+                progressSession?.reset()
             }
         } catch {
             if let index = tasks.firstIndex(where: { $0.id == task.id }) {
                 tasks[index].lastSyncDate = Date()
                 tasks[index].lastSyncStatus = "error"
             }
-            addLog(taskId: task.id, result: error.localizedDescription, success: false)
+            if let finalizeLog = progressSession?.finalizeLog {
+                finalizeLog(error.localizedDescription, false)
+            } else {
+                addLog(taskId: task.id, result: error.localizedDescription, success: false)
+            }
             saveTasks()
             runningTaskID = nil
             runStartedAt = nil
+            progressSession?.reset()
         }
     }
 
@@ -117,6 +197,9 @@ class SyncTaskViewModel: ObservableObject {
         do {
             let data = try Data(contentsOf: fileURL)
             tasks = try JSONDecoder().decode([SyncTask].self, from: data)
+            for index in tasks.indices where tasks[index].lastSyncStatus == "running" {
+                tasks[index].lastSyncStatus = "error"
+            }
             print("Tasks loaded successfully from \(fileURL)")
         } catch {
             print("No tasks to load or failed to load tasks: \(error)")
@@ -143,6 +226,10 @@ class SyncTaskViewModel: ObservableObject {
         do {
             let data = try Data(contentsOf: fileURL)
             logs = try JSONDecoder().decode([LogEntry].self, from: data)
+            for index in logs.indices where logs[index].status == "running" {
+                logs[index].status = nil
+                logs[index].success = false
+            }
             print("Logs loaded successfully from \(fileURL)")
         } catch {
             print("No logs to load or failed to load logs: \(error)")
@@ -157,3 +244,39 @@ class SyncTaskViewModel: ObservableObject {
     
     
 }
+
+struct RealtimeProgressSession {
+    let decorateCommand: @MainActor (String) -> String
+    let onOutput: @MainActor (String) -> Void
+    let finalOutput: @MainActor (String) -> String
+    let finalizeLog: @MainActor (String, Bool) -> Void
+    let reset: @MainActor () -> Void
+}
+
+@MainActor
+protocol SyncTaskExecutionHooks: AnyObject {}
+
+extension SyncTaskExecutionHooks {
+    func ensureLocalPathsAccess(_ paths: [String], completion: @escaping @MainActor (Bool) -> Void) {
+        completion(true)
+    }
+
+    func resolvedLocalPath(_ path: String) -> String {
+        path
+    }
+
+    func prepareSSHExecution(
+        for task: SyncTask,
+        source: String,
+        destination: String
+    ) throws -> (command: String, environment: [String: String], cleanup: (@Sendable () -> Void)?) {
+        let command = "exec /usr/bin/rsync \(task.arguments) \(ShellHelper.quote(source)) \(ShellHelper.quote(destination))"
+        return (command, [:], nil)
+    }
+
+    func beginRealtimeProgress(for task: SyncTask, startedAt: Date) -> RealtimeProgressSession? {
+        nil
+    }
+}
+
+extension SyncTaskViewModel: SyncTaskExecutionHooks {}

@@ -3,6 +3,7 @@ import SwiftUI
 
 extension LogEntry {
     var displayStatus: String {
+        if let status { return status }
         if result.hasPrefix("Sync cancelled by user.") { return "cancelled" }
         return success && !result.contains("rsync error") ? "success" : "error"
     }
@@ -29,6 +30,9 @@ struct LogsView: View {
     private func taskName(_ log: LogEntry) -> String {
         viewModel.tasks.first { $0.id == log.taskId }?.name ?? "Deleted profile"
     }
+    private func isRunningLog(_ log: LogEntry) -> Bool {
+        log.id == viewModel.activeLogID || (log.displayStatus == "running" && viewModel.runningTaskID == log.taskId)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -47,13 +51,22 @@ struct LogsView: View {
             }.padding(.horizontal, 20).padding(.bottom, 16)
             if let runningID = viewModel.runningTaskID,
                selectedTaskID == nil || selectedTaskID == runningID {
-                HStack(spacing: 10) {
-                    ProgressView().controlSize(.small)
-                    Text(viewModel.tasks.first { $0.id == runningID }?.name ?? "Sync")
-                    Text(viewModel.isStopping ? "Stopping…" : "Syncing…").foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Stop", systemImage: "stop.fill") { viewModel.stopSync() }
-                        .disabled(viewModel.isStopping)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        ProgressView().controlSize(.small)
+                        Text(viewModel.tasks.first { $0.id == runningID }?.name ?? "Sync")
+                        Text(viewModel.isStopping ? "Stopping…" : "Syncing…").foregroundStyle(.secondary)
+                        if let pct = viewModel.syncProgressPercentage {
+                            Text("\(pct)%").monospacedDigit().foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Stop", systemImage: "stop.fill") { viewModel.stopSync() }
+                            .disabled(viewModel.isStopping)
+                    }
+                    if let progress = viewModel.syncProgress {
+                        ProgressView(value: progress, total: 1.0)
+                            .progressViewStyle(.linear)
+                    }
                 }.padding(.horizontal, 20).padding(.bottom, 16)
             }
             if filteredLogs.isEmpty {
@@ -67,7 +80,9 @@ struct LogsView: View {
                     List(filteredLogs, selection: $selectedLogID) { log in
                         VStack(alignment: .leading, spacing: 7) {
                             Text(taskName(log)).font(.headline).lineLimit(1)
-                            RunStatus(status: log.displayStatus).font(.callout)
+                            RunStatus(status: log.displayStatus,
+                                      progressPercentage: isRunningLog(log) ? viewModel.syncProgressPercentage : nil)
+                                .font(.callout)
                             Text(log.timestamp, format: .dateTime.month().day().hour().minute().second())
                                 .font(.caption).foregroundStyle(.secondary)
                         }.padding(.vertical, 6).tag(log.id)
@@ -76,7 +91,9 @@ struct LogsView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 5) {
-                                    RunStatus(status: log.displayStatus).font(.headline)
+                                    RunStatus(status: log.displayStatus,
+                                              progressPercentage: isRunningLog(log) ? viewModel.syncProgressPercentage : nil)
+                                        .font(.headline)
                                     Text(log.timestamp, format: .dateTime).font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
@@ -103,6 +120,11 @@ struct LogsView: View {
         .frame(minWidth: 760, idealWidth: 900, minHeight: 500, idealHeight: 620)
         .onAppear { selectedLogID = filteredLogs.first?.id }
         .onChange(of: selectedTaskID) { _, _ in selectedLogID = filteredLogs.first?.id }
+        .onChange(of: viewModel.logs.last?.id) { oldLastID, newLastID in
+            if selectedLogID == nil || selectedLogID == oldLastID {
+                selectedLogID = filteredLogs.first?.id ?? newLastID
+            }
+        }
         .onChange(of: search) { _, _ in
             if selectedLog == nil { selectedLogID = filteredLogs.first?.id }
         }

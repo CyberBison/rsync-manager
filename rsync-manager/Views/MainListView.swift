@@ -19,8 +19,9 @@ struct MainListView: View {
                             Text("\(endpointName(task.source)) → \(endpointName(task.destination))")
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             if viewModel.runningTaskID == task.id {
-                                Label("Syncing", systemImage: "arrow.triangle.2.circlepath")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                let label = viewModel.syncProgressPercentage.map { "Syncing (\($0)%)" } ?? "Syncing"
+                                Label(label, systemImage: "arrow.triangle.2.circlepath")
+                                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                             } else if let status = task.lastSyncStatus {
                                 RunStatus(status: status, usesColor: selection != task.id).font(.caption)
                             }

@@ -47,6 +47,84 @@ struct rsync_managerTests {
         #expect(code != 0)
     }
 
+    @Test func progressTrackerCalculatesPercentageAndNormalizesCarriageReturns() {
+        var tracker = RsyncProgressTracker()
+        tracker.ingest("Transfer starting: 3 files\nfile1.txt\n 32768 50% 32.00KB/s 00:00:01\r")
+        #expect(tracker.currentTransferFile == "file1.txt")
+        #expect(tracker.progress == 0.25)
+
+        tracker.ingest(" 65536 100% 64.00KB/s 00:00:01 (xfer#1, to-check=1/3)\nfile2.txt\n")
+        #expect(tracker.currentTransferFile == "file2.txt")
+        #expect(tracker.progress == 0.50)
+
+        tracker.ingest(" 32768 50% 32.00KB/s 00:00:01\r")
+        #expect(tracker.progress == 0.75)
+        #expect(tracker.formattedOutput == """
+        Transfer starting: 3 files
+        file1.txt
+         65536 100% 64.00KB/s 00:00:01 (xfer#1, to-check=1/3)
+        file2.txt
+         32768 50% 32.00KB/s 00:00:01
+        """)
+    }
+
+    @MainActor @Test func runningSyncUpdatesLatestActivityAndHistoryImmediately() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let source = directory.appendingPathComponent("source")
+        let destination = directory.appendingPathComponent("destination")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Data(repeating: 65, count: 96 * 1024).write(to: source.appendingPathComponent("sample.bin"))
+
+        let model = SyncTaskViewModel(storageDirectory: directory)
+        model.addTask(name: "Live", arguments: "-av --bwlimit=32", source: source.path + "/", destination: destination.path)
+        let task = try #require(model.tasks.first)
+
+        model.runSync(task: task)
+        #expect(model.runningTaskID == task.id)
+        #expect(model.tasks.first?.lastSyncStatus == "running")
+        #expect(model.logs.last?.displayStatus == "running")
+        #expect(model.syncProgress == 0.0)
+
+        var observedLiveOutput = false
+        var observedIntermediateProgress = false
+        for _ in 0..<200 where model.runningTaskID != nil {
+            if let log = model.logs.last, log.displayStatus == "running", !log.result.isEmpty {
+                observedLiveOutput = true
+            }
+            if let progress = model.syncProgress, progress > 0 {
+                observedIntermediateProgress = true
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+
+        #expect(observedLiveOutput)
+        #expect(observedIntermediateProgress)
+        #expect(model.runningTaskID == nil)
+        #expect(model.syncProgress == nil)
+        #expect(model.tasks.first?.lastSyncStatus == "success")
+        #expect(model.logs.last?.displayStatus == "success")
+        #expect(model.logs.last?.success == true)
+    }
+
+    @MainActor @Test func staleRunningStateResetsOnLoad() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let taskID = UUID()
+        let task = SyncTask(id: taskID, name: "Interrupted", arguments: "-av", source: "/a", destination: "/b", lastSyncDate: Date(), lastSyncStatus: "running", isActive: true)
+        let log = LogEntry(id: UUID(), timestamp: Date(), taskId: taskID, result: "Transfer starting: 2 files", success: false, status: "running")
+        try JSONEncoder().encode([task]).write(to: directory.appendingPathComponent("sync_tasks.json"))
+        try JSONEncoder().encode([log]).write(to: directory.appendingPathComponent("sync_logs.json"))
+
+        let model = SyncTaskViewModel(storageDirectory: directory)
+        #expect(model.tasks.first?.lastSyncStatus == "error")
+        #expect(model.logs.first?.displayStatus == "error")
+        #expect(model.logs.first?.status == nil)
+    }
+
     @MainActor @Test func syncCopiesFilesAndRecordsFailure() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let source = directory.appendingPathComponent("source with ' quote")
