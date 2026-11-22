@@ -1,7 +1,54 @@
+import Carbon
 import XCTest
 
 final class rsync_managerUITests: XCTestCase {
-    override func setUpWithError() throws { continueAfterFailure = false }
+    private var previousInputSource: TISInputSource?
+    private var usInputSource: TISInputSource?
+    private var didEnableUSInputSource = false
+
+    private static func runOnMain<T>(_ work: () -> T) -> T {
+        if Thread.isMainThread { return work() }
+        return DispatchQueue.main.sync(execute: work)
+    }
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        Self.runOnMain {
+            let current = TISCopyCurrentKeyboardLayoutInputSource().takeRetainedValue()
+            previousInputSource = current
+            let currentID = TISGetInputSourceProperty(current, kTISPropertyInputSourceID)
+                .map { Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String }
+            guard currentID != "com.apple.keylayout.US" else { return }
+
+            let filter = [kTISPropertyInputSourceID as String: "com.apple.keylayout.US"] as CFDictionary
+            guard let list = TISCreateInputSourceList(filter, true)?.takeRetainedValue() as? [TISInputSource],
+                  let us = list.first else {
+                return
+            }
+            let enabledPtr = TISGetInputSourceProperty(us, kTISPropertyInputSourceIsEnabled)
+            let wasEnabled = enabledPtr.map { CFBooleanGetValue(Unmanaged<CFBoolean>.fromOpaque($0).takeUnretainedValue()) } ?? false
+            if !wasEnabled {
+                TISEnableInputSource(us)
+                didEnableUSInputSource = true
+            }
+            usInputSource = us
+            TISSelectInputSource(us)
+        }
+    }
+
+    override func tearDownWithError() throws {
+        Self.runOnMain {
+            if let previous = previousInputSource {
+                TISSelectInputSource(previous)
+            }
+            if didEnableUSInputSource, let us = usInputSource {
+                TISDisableInputSource(us)
+            }
+            previousInputSource = nil
+            usInputSource = nil
+            didEnableUSInputSource = false
+        }
+    }
 
     @MainActor
     private func launch(dark: Bool = false, narrow: Bool = false, empty: Bool = false, forRun: Bool = false) throws -> XCUIApplication {
