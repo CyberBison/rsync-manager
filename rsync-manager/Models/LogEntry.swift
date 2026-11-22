@@ -7,10 +7,11 @@
 
 import Foundation
 
-struct LogEntry: Identifiable, Codable {
+struct LogEntry: Identifiable, Codable, Equatable {
     let id: UUID
     let timestamp: Date
     let taskId: UUID
-    let result: String
-    let success: Bool
+    var result: String
+    var success: Bool
+    var status: String? = nil
 }

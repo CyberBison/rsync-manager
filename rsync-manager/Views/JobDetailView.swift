@@ -3,11 +3,12 @@ import SwiftUI
 struct RunStatus: View {
     let status: String
     var usesColor = true
+    var progressPercentage: Int? = nil
     private var title: String {
         switch status {
         case "success": "Completed"
         case "cancelled": "Cancelled"
-        case "running": "Syncing"
+        case "running": progressPercentage.map { "Syncing (\($0)%)" } ?? "Syncing"
         default: "Failed"
         }
     }
@@ -69,12 +70,27 @@ struct JobDetailView: View {
                             ProgressView().controlSize(.small)
                             Text(viewModel.isStopping ? "Stopping sync…" : "Sync in progress").font(.headline)
                             Spacer()
+                            if let pct = viewModel.syncProgressPercentage {
+                                Text("\(pct)%").font(.headline).monospacedDigit().foregroundStyle(.secondary)
+                            }
                             if let date = viewModel.runStartedAt {
                                 Text(date, style: .timer).monospacedDigit().foregroundStyle(.secondary)
                             }
                         }
-                        Text("Rsync is transferring files. Output will be available in History when the run finishes.")
-                            .font(.callout).foregroundStyle(.secondary)
+                        if let progress = viewModel.syncProgress {
+                            ProgressView(value: progress, total: 1.0)
+                                .progressViewStyle(.linear)
+                        }
+                        if let file = viewModel.currentTransferFile {
+                            Text(file)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        } else {
+                            Text("Rsync is transferring files. Live output is updating in Latest activity and History.")
+                                .font(.callout).foregroundStyle(.secondary)
+                        }
                         Button("Stop Sync", systemImage: "stop.fill") { viewModel.stopSync() }
                             .buttonStyle(.glass).disabled(viewModel.isStopping)
                     }
@@ -112,12 +128,15 @@ struct JobDetailView: View {
                     }
                     if let date = task.lastSyncDate {
                         HStack {
-                            RunStatus(status: task.lastSyncStatus ?? "error")
+                            RunStatus(status: task.lastSyncStatus ?? "error",
+                                      progressPercentage: isRunning ? viewModel.syncProgressPercentage : nil)
                             Spacer()
                             Text(date, format: .dateTime.month().day().hour().minute()).foregroundStyle(.secondary)
                         }
                         if let log = latestLog {
-                            Text(log.result.isEmpty ? "Rsync finished without output." : log.result)
+                            Text(log.result.isEmpty
+                                 ? (isRunning ? "Starting rsync…" : "Rsync finished without output.")
+                                 : log.result)
                                 .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(.secondary).lineLimit(4).textSelection(.enabled)
                         }
@@ -169,7 +188,8 @@ struct ProfileInspector: View {
             Section("Last run") {
                 if let date = task.lastSyncDate {
                     Text(date, format: .dateTime)
-                    RunStatus(status: task.lastSyncStatus ?? "error")
+                    RunStatus(status: task.lastSyncStatus ?? "error",
+                              progressPercentage: viewModel.runningTaskID == task.id ? viewModel.syncProgressPercentage : nil)
                 } else {
                     Text("Not run yet").foregroundStyle(.secondary)
                 }
