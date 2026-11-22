@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import rsync_manager
 
@@ -87,5 +89,64 @@ struct rsync_managerTests {
         restored.updateTask(original, name: "Renamed", arguments: "--dry-run", source: "/new/", destination: "/backup")
         #expect(restored.tasks.first?.id == original.id)
         #expect(restored.tasks.first?.arguments == "--dry-run")
+    }
+
+    @MainActor @Test func logOutputViewDisplaysLargeCancelledOutputAndResetsOnSwitch() throws {
+        let largeOutput = "Sync cancelled by user.\n" +
+            String(repeating: "x", count: 300) + "\n" +
+            (1...2500).map { "line \($0): dokuwiki/data/pages/file_\($0).txt" }.joined(separator: "\n")
+
+        let firstID = UUID()
+        let host = NSHostingView(
+            rootView: LogOutputView(logID: firstID, text: largeOutput)
+                .frame(width: 500, height: 500)
+        )
+        let window = NSWindow(
+            contentRect: NSRect(x: -2000, y: -2000, width: 500, height: 500),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+
+        let scrollView = try #require(findFirstSubview(ofType: NSScrollView.self, in: host))
+        let textView = try #require(scrollView.documentView as? NSTextView)
+
+        #expect(!textView.isEditable)
+        #expect(textView.isSelectable)
+        #expect(!textView.isRichText)
+        #expect(textView.textColor == .labelColor)
+        #expect(textView.string == largeOutput)
+        #expect(textView.accessibilityValue() as? String == largeOutput)
+        #expect(textView.frame.width > 1000)
+        #expect(textView.frame.height > 10000)
+
+        textView.setSelectedRange(NSRange(location: 0, length: 10))
+        textView.scrollToEndOfDocument(nil)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        let secondID = UUID()
+        host.rootView = LogOutputView(logID: secondID, text: "Short error")
+            .frame(width: 500, height: 500)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+
+        #expect(textView.string == "Short error")
+        #expect(textView.selectedRange().length == 0)
+        #expect(scrollView.contentView.bounds.origin == .zero)
+        #expect(textView.frame.width <= scrollView.contentSize.width + 1)
+    }
+
+    private func findFirstSubview<T: NSView>(ofType type: T.Type, in view: NSView) -> T? {
+        if let match = view as? T { return match }
+        for subview in view.subviews {
+            if let match = findFirstSubview(ofType: type, in: subview) { return match }
+        }
+        return nil
     }
 }
