@@ -12,10 +12,13 @@ struct ShellHelper {
         "'" + value.replacingOccurrences(of: "'", with: "'\"'\"'") + "'"
     }
 
-    /// Drain output off the main thread; deliver completion after the pipe closes.
+    /// Stream output incrementally off the main thread; deliver completion after the pipe closes.
     /// exec replaces the shell so Stop targets rsync itself.
     @MainActor
     static func startCommand(_ command: String,
+                             environment: [String: String] = [:],
+                             cleanup: (@Sendable () -> Void)? = nil,
+                             onOutput: (@MainActor (String) -> Void)? = nil,
                              completion: @escaping @MainActor (String, Int32) -> Void) throws -> Process {
         let process = Process()
         let pipe = Pipe()
@@ -23,11 +26,34 @@ struct ShellHelper {
         process.standardError = pipe
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-c", command]
-        try process.run()
+        if !environment.isEmpty {
+            var env = ProcessInfo.processInfo.environment
+            for (key, value) in environment {
+                env[key] = value
+            }
+            process.environment = env
+        }
+        do {
+            try process.run()
+        } catch {
+            cleanup?()
+            throw error
+        }
+        let reader = pipe.fileHandleForReading
         DispatchQueue.global(qos: .userInitiated).async {
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            var collected = Data()
+            while true {
+                let chunk = reader.availableData
+                if chunk.isEmpty { break }
+                collected.append(chunk)
+                if let onOutput {
+                    let text = String(decoding: chunk, as: UTF8.self)
+                    DispatchQueue.main.async { onOutput(text) }
+                }
+            }
             process.waitUntilExit()
-            let output = String(decoding: data, as: UTF8.self)
+            cleanup?()
+            let output = String(decoding: collected, as: UTF8.self)
             let code = process.terminationStatus
             DispatchQueue.main.async { completion(output, code) }
         }
@@ -46,6 +72,15 @@ struct ShellHelper {
         try task.run()
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    static func makeSSHAskPassScript() throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rsync-askpass-\(UUID().uuidString).sh")
+        let script = "#!/bin/zsh\nprintf '%s\\n' \"$RSYNC_SSH_PASSWORD\"\n"
+        try Data(script.utf8).write(to: url, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: url.path)
+        return url
     }
 }
 
