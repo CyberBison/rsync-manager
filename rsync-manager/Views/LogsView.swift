@@ -86,12 +86,12 @@ struct LogsView: View {
                                 }.labelStyle(.iconOnly).help("Copy complete output")
                             }.padding(16)
                             Divider()
-                            ScrollView([.horizontal, .vertical]) {
-                                Text(log.result.isEmpty ? "Rsync finished without output." : log.result)
-                                    .font(.system(.body, design: .monospaced)).textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .topLeading).padding(16)
-                            }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .background(.background)
+                            LogOutputView(
+                                logID: log.id,
+                                text: log.result.isEmpty ? "Rsync finished without output." : log.result
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(.background)
                         }.frame(minWidth: 340)
                     } else {
                         ContentUnavailableView("Select a run", systemImage: "text.alignleft", description: Text("Inspect its full rsync output here."))
@@ -106,5 +106,101 @@ struct LogsView: View {
         .onChange(of: search) { _, _ in
             if selectedLog == nil { selectedLogID = filteredLogs.first?.id }
         }
+    }
+}
+
+/// Keeps a non-wrapping `NSTextView` sized to at least the visible clip area during live resizes.
+private final class NonWrappingLogScrollView: NSScrollView {
+    private var isUpdatingMinSize = false
+
+    override func layout() {
+        super.layout()
+        guard !isUpdatingMinSize, let textView = documentView as? NSTextView else { return }
+        let contentSize = self.contentSize
+        if abs(textView.minSize.width - contentSize.width) > 0.5 ||
+           abs(textView.minSize.height - contentSize.height) > 0.5 {
+            isUpdatingMinSize = true
+            textView.minSize = contentSize
+            textView.sizeToFit()
+            isUpdatingMinSize = false
+        }
+    }
+}
+
+/// Displays large, non-wrapping sync logs via TextKit 1 `NSTextView` so huge outputs avoid
+/// SwiftUI `Text`'s single-layer CoreAnimation backing-store drop.
+struct LogOutputView: NSViewRepresentable {
+    let logID: UUID
+    let text: String
+
+    private static var outputFont: NSFont {
+        .monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+    }
+
+    final class Coordinator {
+        var lastLogID: UUID?
+        var lastText: String?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NonWrappingLogScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .noBorder
+        scrollView.drawsBackground = false
+
+        // TextKit 1 is required so `widthTracksTextView = false` expands `frame.width` horizontally.
+        let textView = NSTextView(usingTextLayoutManager: false)
+        let font = Self.outputFont
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.allowsUndo = false
+        textView.drawsBackground = false
+        textView.usesFindBar = true
+        textView.font = font
+        textView.textColor = .labelColor
+        textView.typingAttributes = [.font: font, .foregroundColor: NSColor.labelColor]
+        textView.textContainerInset = NSSize(width: 16, height: 16)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = true
+        textView.autoresizingMask = []
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.widthTracksTextView = false
+        textView.textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.layoutManager?.allowsNonContiguousLayout = true
+        textView.setAccessibilityIdentifier("logOutputTextView")
+        textView.setAccessibilityLabel("Sync output")
+
+        scrollView.documentView = textView
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let textView = scrollView.documentView as? NSTextView else { return }
+        guard context.coordinator.lastLogID != logID || context.coordinator.lastText != text else { return }
+
+        context.coordinator.lastLogID = logID
+        context.coordinator.lastText = text
+
+        textView.string = text
+        textView.font = Self.outputFont
+        textView.textColor = .labelColor
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+
+        let contentSize = scrollView.contentSize
+        if contentSize.width > 0 && contentSize.height > 0 {
+            textView.minSize = contentSize
+            textView.setFrameSize(contentSize)
+        }
+        textView.sizeToFit()
+
+        scrollView.contentView.scroll(to: .zero)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 }

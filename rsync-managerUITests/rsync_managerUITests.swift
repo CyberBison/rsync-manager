@@ -109,7 +109,7 @@ final class rsync_managerUITests: XCTestCase {
             app.buttons["Stop Sync"].firstMatch.click()
             XCTAssertTrue(app.buttons["Run Sync"].waitForExistence(timeout: 10))
             app.buttons["History"].click()
-            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "value CONTAINS %@", "Sync cancelled by user.")).firstMatch.waitForExistence(timeout: 5))
+            XCTAssertTrue(app.sheets.firstMatch.textViews.matching(NSPredicate(format: "value CONTAINS %@", "Sync cancelled by user.")).firstMatch.waitForExistence(timeout: 5))
             capture(app, "\(dark ? "Dark" : "Light")-Cancelled")
             app.terminate()
         }
