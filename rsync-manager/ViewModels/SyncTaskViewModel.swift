@@ -22,41 +22,153 @@ class SyncTaskViewModel: ObservableObject {
     private let logsFileName = "sync_logs.json"
     
     private let storageDirectory: URL?
+    let passwordStore: SSHPasswordStore
+    let sshAccessManager = SSHSandboxAccessManager()
+
+    var fallbackKnownHostsURL: URL {
+        getDocumentsDirectory().appendingPathComponent("known_hosts")
+    }
 
     init(storageDirectory: URL? = nil) {
         self.storageDirectory = storageDirectory
+        self.passwordStore = SSHPasswordStore(storageDirectory: storageDirectory)
         loadTasks()
         loadLogs()
     }
     
-    func addTask(name: String, arguments: String, source: String, destination: String) {
+    func addTask(
+        name: String,
+        arguments: String,
+        source: String,
+        destination: String,
+        sourceType: EndpointLocationType = .local,
+        destinationType: EndpointLocationType = .local,
+        sshConfiguration: SSHConfiguration? = nil,
+        sshPassword: String? = nil
+    ) {
+        let resolvedSource = sourceType == .ssh ? (sshConfiguration?.formattedEndpoint ?? source) : source
+        let resolvedDestination = destinationType == .ssh ? (sshConfiguration?.formattedEndpoint ?? destination) : destination
+        let activeSSH = (sourceType == .ssh || destinationType == .ssh) ? sshConfiguration : nil
         let newTask = SyncTask(
             id: UUID(),
             name: name,
             arguments: arguments,
-            source: source,
-            destination: destination,
+            source: resolvedSource,
+            destination: resolvedDestination,
             lastSyncDate: nil,
             lastSyncStatus: nil,
-            isActive: true
+            isActive: true,
+            sourceType: sourceType,
+            destinationType: destinationType,
+            sshConfiguration: activeSSH
         )
+        if let activeSSH, activeSSH.usesPassword, let sshPassword {
+            passwordStore.setPassword(sshPassword, for: newTask.id)
+        }
         tasks.append(newTask)
     }
     
-    func updateTask(_ task: SyncTask, name: String, arguments: String, source: String, destination: String) {
+    func updateTask(
+        _ task: SyncTask,
+        name: String,
+        arguments: String,
+        source: String,
+        destination: String,
+        sourceType: EndpointLocationType = .local,
+        destinationType: EndpointLocationType = .local,
+        sshConfiguration: SSHConfiguration? = nil,
+        sshPassword: String? = nil
+    ) {
+        let resolvedSource = sourceType == .ssh ? (sshConfiguration?.formattedEndpoint ?? source) : source
+        let resolvedDestination = destinationType == .ssh ? (sshConfiguration?.formattedEndpoint ?? destination) : destination
+        let activeSSH = (sourceType == .ssh || destinationType == .ssh) ? sshConfiguration : nil
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
-                tasks[index] = SyncTask(
-                    id: task.id,
-                    name: name,
-                    arguments: arguments,
-                    source: source,
-                    destination: destination,
-                    lastSyncDate: task.lastSyncDate,
-                    lastSyncStatus: task.lastSyncStatus,
-                    isActive: task.isActive
-                )
-            }
+            tasks[index] = SyncTask(
+                id: task.id,
+                name: name,
+                arguments: arguments,
+                source: resolvedSource,
+                destination: resolvedDestination,
+                lastSyncDate: task.lastSyncDate,
+                lastSyncStatus: task.lastSyncStatus,
+                isActive: task.isActive,
+                sourceType: sourceType,
+                destinationType: destinationType,
+                sshConfiguration: activeSSH
+            )
         }
+        if let activeSSH, activeSSH.usesPassword {
+            if let sshPassword {
+                passwordStore.setPassword(sshPassword, for: task.id)
+            }
+        } else {
+            passwordStore.deletePassword(for: task.id)
+        }
+    }
+
+    func deleteTask(_ task: SyncTask) {
+        passwordStore.deletePassword(for: task.id)
+        tasks.removeAll { $0.id == task.id }
+        saveTasks()
+    }
+
+    func buildSSHCommand(for ssh: SSHConfiguration, hasSSHDirAccess: Bool = true) -> String {
+        var parts = ["/usr/bin/ssh", "-o StrictHostKeyChecking=accept-new"]
+        if !hasSSHDirAccess {
+            parts.append("-o UserKnownHostsFile=\(ShellHelper.quote(fallbackKnownHostsURL.path))")
+        }
+        if let port = ssh.port, port > 0 {
+            parts.append("-p \(port)")
+        }
+        switch ssh.authMethod {
+        case .sshAgent:
+            parts.append("-o BatchMode=yes")
+        case .publicKey:
+            let trimmedKey = ssh.keyPath.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedKey.isEmpty {
+                let expandedKey = sshAccessManager.expandRealHomePath(trimmedKey)
+                parts.append("-i \(ShellHelper.quote(expandedKey))")
+                parts.append("-o IdentitiesOnly=yes")
+            }
+            parts.append("-o BatchMode=yes")
+        case .password:
+            parts.append("-o PreferredAuthentications=keyboard-interactive,password")
+            parts.append("-o PubkeyAuthentication=no")
+            parts.append("-o NumberOfPasswordPrompts=1")
+        case .certificate:
+            let trimmedKey = ssh.keyPath.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedKey.isEmpty {
+                let expandedKey = sshAccessManager.expandRealHomePath(trimmedKey)
+                parts.append("-i \(ShellHelper.quote(expandedKey))")
+            }
+            let trimmedCert = ssh.certificatePath.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedCert.isEmpty {
+                let expandedCert = sshAccessManager.expandRealHomePath(trimmedCert)
+                parts.append("-o CertificateFile=\(ShellHelper.quote(expandedCert))")
+            }
+            parts.append("-o IdentitiesOnly=yes")
+            parts.append("-o BatchMode=yes")
+        }
+        return parts.joined(separator: " ")
+    }
+
+    func buildRsyncCommand(for task: SyncTask, hasSSHDirAccess: Bool = true) -> String {
+        let sourceArg = task.sourceType == .ssh
+            ? (task.sshConfiguration?.formattedEndpoint ?? task.source)
+            : task.source
+        let destArg = task.destinationType == .ssh
+            ? (task.sshConfiguration?.formattedEndpoint ?? task.destination)
+            : task.destination
+
+        var extraArgs = ""
+        let tokens = task.arguments.split(whereSeparator: \.isWhitespace)
+        let hasCustomRsh = tokens.contains("-e") || tokens.contains { $0.hasPrefix("--rsh") }
+        if task.usesSSH, !hasCustomRsh, let ssh = task.sshConfiguration {
+            let sshCmd = buildSSHCommand(for: ssh, hasSSHDirAccess: hasSSHDirAccess)
+            extraArgs = " -e \(ShellHelper.quote(sshCmd))"
+        }
+        return "exec /usr/bin/rsync \(task.arguments)\(extraArgs) \(ShellHelper.quote(sourceArg)) \(ShellHelper.quote(destArg))"
+    }
     
     func runSync(task: SyncTask) {
         guard runningTaskID == nil else { return }
@@ -66,8 +178,34 @@ class SyncTaskViewModel: ObservableObject {
         do {
             // Keep the existing shell-based free-form arguments. Quote folder paths
             // literally so spaces, apostrophes, and shell characters remain paths.
-            let command = "exec /usr/bin/rsync \(task.arguments) \(ShellHelper.quote(task.source)) \(ShellHelper.quote(task.destination))"
-            runningProcess = try ShellHelper.startCommand(command) { [weak self] output, exitCode in
+            var hasSSHDirAccess = true
+            if task.usesSSH {
+                hasSSHDirAccess = storageDirectory != nil ? true : sshAccessManager.activateSavedSSHDirectoryAccess()
+                if let ssh = task.sshConfiguration {
+                    sshAccessManager.activateBookmarkedFile(at: ssh.keyPath)
+                    sshAccessManager.activateBookmarkedFile(at: ssh.certificatePath)
+                    if ssh.authMethod == .sshAgent && hasSSHDirAccess {
+                        sshAccessManager.activateBookmarkedConfigCredentials(
+                            host: ssh.host,
+                            user: ssh.user,
+                            port: ssh.port
+                        )
+                    }
+                }
+            }
+            let command = buildRsyncCommand(for: task, hasSSHDirAccess: hasSSHDirAccess)
+            var env: [String: String] = [:]
+            var cleanup: (@Sendable () -> Void)? = nil
+            if task.usesSSH, let ssh = task.sshConfiguration, ssh.usesPassword,
+               let password = passwordStore.password(for: task.id), !password.isEmpty {
+                let scriptURL = try ShellHelper.makeSSHAskPassScript()
+                env["SSH_ASKPASS"] = scriptURL.path
+                env["SSH_ASKPASS_REQUIRE"] = "force"
+                env["DISPLAY"] = "rsync-manager"
+                env["RSYNC_SSH_PASSWORD"] = password
+                cleanup = { try? FileManager.default.removeItem(at: scriptURL) }
+            }
+            runningProcess = try ShellHelper.startCommand(command, environment: env, cleanup: cleanup) { [weak self] output, exitCode in
                 guard let self else { return }
                 let cancelled = self.isStopping
                 let status = cancelled ? "cancelled" : (exitCode == 0 ? "success" : "error")

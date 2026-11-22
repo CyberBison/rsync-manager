@@ -100,6 +100,47 @@ final class rsync_managerUITests: XCTestCase {
         app.terminate()
     }
 
+    @MainActor func testSSHEndpointConfiguration() throws {
+        let app = try launch(empty: true)
+        app.typeKey("n", modifierFlags: [.command, .shift])
+        XCTAssertTrue(app.buttons["Create Profile"].waitForExistence(timeout: 3))
+
+        app.textFields["Name"].click()
+        app.textFields["Name"].typeText("Remote Sync")
+        app.textFields["Source path"].click()
+        app.textFields["Source path"].typeText("/tmp/source/")
+
+        let destPicker = app.radioGroups["destinationTypePicker"]
+        XCTAssertTrue(destPicker.waitForExistence(timeout: 3))
+        destPicker.radioButtons["SSH"].click()
+
+        let hostField = app.textFields["SSH Host"]
+        XCTAssertTrue(hostField.waitForExistence(timeout: 3))
+        hostField.click()
+        hostField.typeText("studio.local")
+        app.textFields["SSH Port"].click()
+        app.textFields["SSH Port"].typeText("2222")
+        app.textFields["Destination path"].click()
+        app.textFields["Destination path"].typeText("/archive/projects")
+        app.typeKey(.tab, modifierFlags: [])
+        app.typeText("backup")
+
+        // Verify mutual exclusion: switching Source to SSH switches Destination back to Local
+        let sourcePicker = app.radioGroups["sourceTypePicker"]
+        sourcePicker.radioButtons["SSH"].click()
+        XCTAssertTrue(app.textFields["Destination path"].waitForExistence(timeout: 3))
+
+        // Switch Destination back to SSH for saving
+        destPicker.radioButtons["SSH"].click()
+        XCTAssertTrue(app.textFields["Source path"].waitForExistence(timeout: 3))
+
+        XCTAssertTrue(app.buttons["Create Profile"].isEnabled)
+        app.buttons["Create Profile"].click()
+        XCTAssertTrue(app.buttons["Edit Profile"].waitForExistence(timeout: 3))
+        capture(app, "SSH-Profile-Detail")
+        app.terminate()
+    }
+
     @MainActor func testRunningAndCancellation() throws {
         for dark in [false, true] {
             let app = try launch(dark: dark, forRun: true)
