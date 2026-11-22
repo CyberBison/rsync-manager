@@ -17,14 +17,17 @@ class SyncTaskViewModel: ObservableObject {
     @Published private(set) var runStartedAt: Date?
     @Published private(set) var isStopping = false
     private var runningProcess: Process?
+    private var isRequestingFolderAccess = false
 
     private let tasksFileName = "sync_tasks.json"
     private let logsFileName = "sync_logs.json"
     
     private let storageDirectory: URL?
+    let folderAccessManager: FolderSandboxAccessManager
 
     init(storageDirectory: URL? = nil) {
         self.storageDirectory = storageDirectory
+        self.folderAccessManager = FolderSandboxAccessManager(bypassPermissionPrompts: storageDirectory != nil)
         loadTasks()
         loadLogs()
     }
@@ -59,6 +62,17 @@ class SyncTaskViewModel: ObservableObject {
         }
     
     func runSync(task: SyncTask) {
+        guard runningTaskID == nil, !isRequestingFolderAccess else { return }
+        isRequestingFolderAccess = true
+        folderAccessManager.ensureDirectoriesAccess(paths: [task.source, task.destination]) { [weak self] granted in
+            guard let self else { return }
+            self.isRequestingFolderAccess = false
+            guard granted else { return }
+            self.startSyncProcess(task: task)
+        }
+    }
+
+    private func startSyncProcess(task: SyncTask) {
         guard runningTaskID == nil else { return }
         runningTaskID = task.id
         runStartedAt = Date()
@@ -66,7 +80,9 @@ class SyncTaskViewModel: ObservableObject {
         do {
             // Keep the existing shell-based free-form arguments. Quote folder paths
             // literally so spaces, apostrophes, and shell characters remain paths.
-            let command = "exec /usr/bin/rsync \(task.arguments) \(ShellHelper.quote(task.source)) \(ShellHelper.quote(task.destination))"
+            let sourcePath = folderAccessManager.resolvedCommandPath(for: task.source)
+            let destinationPath = folderAccessManager.resolvedCommandPath(for: task.destination)
+            let command = "exec /usr/bin/rsync \(task.arguments) \(ShellHelper.quote(sourcePath)) \(ShellHelper.quote(destinationPath))"
             runningProcess = try ShellHelper.startCommand(command) { [weak self] output, exitCode in
                 guard let self else { return }
                 let cancelled = self.isStopping
