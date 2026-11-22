@@ -45,18 +45,23 @@ struct JobDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("SYNC PROFILE").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Text(task.name).font(.largeTitle.weight(.bold)).textSelection(.enabled)
-                    Text("One-way sync from source to destination.").foregroundStyle(.secondary)
+                    Text(task.direction == .oneWay
+                         ? "One-way sync from source to destination."
+                         : "Bi-sync between source and destination.")
+                        .foregroundStyle(.secondary)
                 }
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .center, spacing: 20) {
                         EndpointView(title: "Source", path: task.source).frame(minWidth: 200)
-                        Image(systemName: "arrow.right").font(.title2).foregroundStyle(.tertiary)
-                            .accessibilityLabel("Syncs to")
+                        Image(systemName: task.direction.symbolName).font(.title2).foregroundStyle(.tertiary)
+                            .accessibilityLabel(task.direction == .oneWay ? "Syncs to" : "Syncs both ways with")
                         EndpointView(title: "Destination", path: task.destination).frame(minWidth: 200)
                     }
                     VStack(alignment: .leading, spacing: 16) {
                         EndpointView(title: "Source", path: task.source)
-                        Label("Syncs to", systemImage: "arrow.down").font(.caption).foregroundStyle(.secondary)
+                        Label(task.direction == .oneWay ? "Syncs to" : "Syncs both ways",
+                              systemImage: task.direction.verticalSymbolName)
+                            .font(.caption).foregroundStyle(.secondary)
                         EndpointView(title: "Destination", path: task.destination)
                     }
                 }
@@ -87,15 +92,20 @@ struct JobDetailView: View {
                         Button("Edit Profile", systemImage: "pencil", action: onEdit)
                             .buttonStyle(.glass).disabled(isRunning)
                     }
-                    Label("Source files are copied to the destination", systemImage: "arrow.right.doc.on.clipboard")
-                    if task.arguments.contains("--delete") {
-                        Label {
-                            Text("Files absent from the source may be deleted at the destination")
-                        } icon: {
-                            Image(systemName: "trash").foregroundStyle(.orange)
+                    if task.direction == .oneWay {
+                        Label("Source files are copied to the destination", systemImage: "arrow.right.doc.on.clipboard")
+                        if SyncTaskViewModel.containsDeleteFlag(task.arguments) {
+                            Label {
+                                Text("Files absent from the source may be deleted at the destination")
+                            } icon: {
+                                Image(systemName: "trash").foregroundStyle(.orange)
+                            }
                         }
+                    } else {
+                        Label("Newer and added files are synced in both directions", systemImage: "arrow.left.arrow.right")
+                        Label("Files deleted on one side after the initial sync are removed from the other", systemImage: "trash")
                     }
-                    if task.arguments.contains("--dry-run") || task.arguments.split(separator: " ").contains("-n") {
+                    if SyncTaskViewModel.isDryRun(task.arguments) {
                         Label("Dry run — previews changes without copying files", systemImage: "eye")
                     }
                     Text("Custom flags and exclusions are available in Profile Options.")
@@ -156,7 +166,7 @@ struct ProfileInspector: View {
     var body: some View {
         Form {
             Section("Profile Options") {
-                LabeledContent("Direction", value: "One-way")
+                LabeledContent("Direction", value: task.direction.shortTitle)
                 LabeledContent("Executable", value: "/usr/bin/rsync")
             }
             Section("Rsync arguments") {

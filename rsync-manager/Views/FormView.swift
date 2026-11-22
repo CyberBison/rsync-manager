@@ -10,6 +10,8 @@ struct FormView: View {
     @State private var arguments: String
     @State private var source: String
     @State private var destination: String
+    @State private var direction: SyncDirection
+    @State private var showingDeleteRemovedWarning: Bool
     @State private var showingAdvanced = false
     @FocusState private var nameFocused: Bool
 
@@ -18,11 +20,26 @@ struct FormView: View {
         self.height = height
         self.onDismiss = onDismiss
         self.onSave = onSave
+        let initialDirection = task?.direction ?? .oneWay
+        let rawArguments = task?.arguments ?? "-av --delete"
+        let rawSource = task?.source ?? ""
+        let rawDestination = task?.destination ?? ""
+        let sanitization = SyncTaskViewModel.sanitizeBiSyncArguments(rawArguments)
+
         _showingAdvanced = State(initialValue: task != nil)
         _name = State(initialValue: task?.name ?? "")
-        _arguments = State(initialValue: task?.arguments ?? "-av --delete")
-        _source = State(initialValue: task?.source ?? "")
-        _destination = State(initialValue: task?.destination ?? "")
+        _direction = State(initialValue: initialDirection)
+        if initialDirection == .biSync {
+            _arguments = State(initialValue: sanitization.sanitized)
+            _source = State(initialValue: rawSource.isEmpty ? rawSource : SyncTaskViewModel.normalizedBiSyncPath(rawSource))
+            _destination = State(initialValue: rawDestination.isEmpty ? rawDestination : SyncTaskViewModel.normalizedBiSyncPath(rawDestination))
+            _showingDeleteRemovedWarning = State(initialValue: sanitization.strippedDelete)
+        } else {
+            _arguments = State(initialValue: rawArguments)
+            _source = State(initialValue: rawSource)
+            _destination = State(initialValue: rawDestination)
+            _showingDeleteRemovedWarning = State(initialValue: false)
+        }
     }
 
     private var canSave: Bool {
@@ -47,17 +64,50 @@ struct FormView: View {
                 Section("Folders") {
                     FolderPicker(label: "Source", path: $source)
                     FolderPicker(label: "Destination", path: $destination)
-                    Text("A trailing slash on the source copies its contents. Without it, rsync copies the folder itself.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    if direction == .oneWay {
+                        Text("A trailing slash on the source copies its contents. Without it, rsync copies the folder itself.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("Bi-sync normalizes both folder paths with a trailing slash to keep their contents synchronized symmetrically.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
                 Section("Behaviour") {
-                    Label("One-way sync", systemImage: "arrow.right")
-                    if arguments.contains("--delete") {
-                        Label {
-                            Text("Destination files missing from the source can be deleted.")
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-                        }.font(.callout)
+                    HStack(spacing: 8) {
+                        Image(systemName: direction.symbolName)
+                            .foregroundStyle(.secondary)
+                            .contentTransition(.symbolEffect(.replace))
+                            .accessibilityHidden(true)
+                        Picker("Sync Behavior", selection: $direction) {
+                            ForEach(SyncDirection.allCases) { mode in
+                                Text(mode.title).tag(mode)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .fixedSize()
+                        .accessibilityLabel("Sync behavior")
+                        .accessibilityIdentifier("syncDirectionPicker")
+                        Spacer()
+                    }
+                    if direction == .oneWay {
+                        if SyncTaskViewModel.containsDeleteFlag(arguments) {
+                            Label {
+                                Text("Destination files missing from the source can be deleted.")
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                            }.font(.callout)
+                        }
+                    } else {
+                        if showingDeleteRemovedWarning || SyncTaskViewModel.containsDeleteFlag(arguments) {
+                            Label {
+                                Text("The --delete flag is removed when Bi-Sync is selected to prevent deleting files before both folders are synced.")
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                            }.font(.callout)
+                        }
+                        Label("Newer files on either side update the other (--update). Single-side deletions are tracked after the initial sync.", systemImage: "arrow.triangle.2.circlepath")
+                            .font(.callout).foregroundStyle(.secondary)
                     }
                     DisclosureGroup("Advanced arguments & exclusions", isExpanded: $showingAdvanced) {
                         TextField("Arguments", text: $arguments, axis: .vertical)
@@ -79,14 +129,42 @@ struct FormView: View {
         }
         .frame(width: 580, height: height)
         .onAppear { nameFocused = true }
+        .onChange(of: direction) { _, newDirection in
+            if newDirection == .biSync {
+                if !source.isEmpty {
+                    source = SyncTaskViewModel.normalizedBiSyncPath(source)
+                }
+                if !destination.isEmpty {
+                    destination = SyncTaskViewModel.normalizedBiSyncPath(destination)
+                }
+                let result = SyncTaskViewModel.sanitizeBiSyncArguments(arguments)
+                arguments = result.sanitized
+                if result.strippedDelete {
+                    showingDeleteRemovedWarning = true
+                }
+            } else {
+                showingDeleteRemovedWarning = false
+                if arguments == "-avu" || arguments == "-av -u" {
+                    arguments = "-av --delete"
+                }
+            }
+        }
     }
 
     private func save() {
+        var finalSource = source
+        var finalDestination = destination
+        var finalArguments = arguments
+        if direction == .biSync {
+            finalSource = SyncTaskViewModel.normalizedBiSyncPath(source)
+            finalDestination = SyncTaskViewModel.normalizedBiSyncPath(destination)
+            finalArguments = SyncTaskViewModel.sanitizeBiSyncArguments(arguments).sanitized
+        }
         if let task {
-            viewModel.updateTask(task, name: name, arguments: arguments, source: source, destination: destination)
+            viewModel.updateTask(task, name: name, arguments: finalArguments, source: finalSource, destination: finalDestination, direction: direction)
             onSave(task.id)
         } else {
-            viewModel.addTask(name: name, arguments: arguments, source: source, destination: destination)
+            viewModel.addTask(name: name, arguments: finalArguments, source: finalSource, destination: finalDestination, direction: direction)
             if let id = viewModel.tasks.last?.id { onSave(id) }
         }
         viewModel.saveTasks()
