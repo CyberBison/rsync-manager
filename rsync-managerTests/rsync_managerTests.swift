@@ -9,6 +9,7 @@ struct rsync_managerTests {
         """.utf8)
         let profile = try JSONDecoder().decode(SyncTask.self, from: data)
         #expect(profile.arguments == "-av --delete")
+        #expect(profile.direction == .oneWay)
         #expect(try JSONDecoder().decode(SyncTask.self, from: JSONEncoder().encode(profile)) == profile)
     }
 
@@ -87,5 +88,95 @@ struct rsync_managerTests {
         restored.updateTask(original, name: "Renamed", arguments: "--dry-run", source: "/new/", destination: "/backup")
         #expect(restored.tasks.first?.id == original.id)
         #expect(restored.tasks.first?.arguments == "--dry-run")
+    }
+
+    @MainActor @Test func biSyncSanitizesArgumentsAndNormalizesPathsOnUpdate() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let sanitizedDelete = SyncTaskViewModel.sanitizeBiSyncArguments("-av --delete --exclude='*.tmp'")
+        #expect(sanitizedDelete.sanitized == "-avu --exclude='*.tmp'")
+        #expect(sanitizedDelete.strippedDelete == true)
+
+        let sanitizedNoDelete = SyncTaskViewModel.sanitizeBiSyncArguments("-av")
+        #expect(sanitizedNoDelete.sanitized == "-avu")
+        #expect(sanitizedNoDelete.strippedDelete == false)
+
+        #expect(SyncTaskViewModel.normalizedBiSyncPath("/tmp/folder") == "/tmp/folder/")
+        #expect(SyncTaskViewModel.normalizedBiSyncPath("/tmp/folder///") == "/tmp/folder/")
+
+        let model = SyncTaskViewModel(storageDirectory: directory)
+        model.addTask(name: "SwitchToBiSync", arguments: "-av --delete", source: "/tmp/src", destination: "/tmp/dst", direction: .oneWay)
+        let original = try #require(model.tasks.first)
+        model.updateTask(original, name: "SwitchToBiSync", arguments: "-av --delete", source: "/tmp/src", destination: "/tmp/dst", direction: .biSync)
+
+        let updated = try #require(model.tasks.first)
+        #expect(updated.direction == .biSync)
+        #expect(updated.source == "/tmp/src/")
+        #expect(updated.destination == "/tmp/dst/")
+        #expect(updated.arguments == "-avu")
+    }
+
+    @MainActor @Test func biSyncMergesNewerFilesAndPropagatesDeletions() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let source = directory.appendingPathComponent("source")
+        let destination = directory.appendingPathComponent("destination")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fromSource = source.appendingPathComponent("fromSource.txt")
+        let fromDest = destination.appendingPathComponent("fromDest.txt")
+        let sharedSource = source.appendingPathComponent("shared.txt")
+        let sharedDest = destination.appendingPathComponent("shared.txt")
+
+        try Data("from source".utf8).write(to: fromSource)
+        try Data("from dest".utf8).write(to: fromDest)
+        try Data("older".utf8).write(to: sharedSource)
+        try Data("newer".utf8).write(to: sharedDest)
+
+        let olderDate = Date(timeIntervalSinceNow: -60)
+        let newerDate = Date()
+        try FileManager.default.setAttributes([.modificationDate: olderDate], ofItemAtPath: sharedSource.path)
+        try FileManager.default.setAttributes([.modificationDate: newerDate], ofItemAtPath: sharedDest.path)
+
+        let model = SyncTaskViewModel(storageDirectory: directory)
+        model.addTask(name: "BiSyncIntegration", arguments: "-av --delete", source: source.path, destination: destination.path, direction: .biSync)
+
+        let task = try #require(model.tasks.first)
+        #expect(task.source == source.path + "/")
+        #expect(task.destination == destination.path + "/")
+
+        // Run 1: Initial baseline resync merges both folders without deletions or nesting
+        model.runSync(task: task)
+        for _ in 0..<100 where model.runningTaskID != nil {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(model.runningTaskID == nil)
+        #expect(model.logs.last?.success == true)
+        #expect(try String(contentsOf: destination.appendingPathComponent("fromSource.txt"), encoding: .utf8) == "from source")
+        #expect(try String(contentsOf: source.appendingPathComponent("fromDest.txt"), encoding: .utf8) == "from dest")
+        #expect(try String(contentsOf: sharedSource, encoding: .utf8) == "newer")
+        #expect(try String(contentsOf: sharedDest, encoding: .utf8) == "newer")
+        #expect(!FileManager.default.fileExists(atPath: destination.appendingPathComponent("source").path))
+        #expect(!FileManager.default.fileExists(atPath: source.appendingPathComponent("destination").path))
+
+        // Run 2: Delete one tracked file from each side and add a new file on destination
+        try FileManager.default.removeItem(at: fromSource)
+        try FileManager.default.removeItem(at: fromDest)
+        try Data("brand new".utf8).write(to: destination.appendingPathComponent("brandNew.txt"))
+
+        model.runSync(task: try #require(model.tasks.first))
+        for _ in 0..<100 where model.runningTaskID != nil {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(model.runningTaskID == nil)
+        #expect(model.logs.last?.success == true)
+        #expect(!FileManager.default.fileExists(atPath: destination.appendingPathComponent("fromSource.txt").path))
+        #expect(!FileManager.default.fileExists(atPath: source.appendingPathComponent("fromDest.txt").path))
+        #expect(try String(contentsOf: source.appendingPathComponent("brandNew.txt"), encoding: .utf8) == "brand new")
+        #expect(FileManager.default.fileExists(atPath: sharedSource.path))
+        #expect(FileManager.default.fileExists(atPath: sharedDest.path))
     }
 }

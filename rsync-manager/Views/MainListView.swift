@@ -16,7 +16,7 @@ struct MainListView: View {
                             .foregroundStyle(.secondary)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(task.name).font(.headline).lineLimit(1)
-                            Text("\(endpointName(task.source)) → \(endpointName(task.destination))")
+                            Text("\(endpointName(task.source)) \(task.direction.inlineArrow) \(endpointName(task.destination))")
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             if viewModel.runningTaskID == task.id {
                                 Label("Syncing", systemImage: "arrow.triangle.2.circlepath")

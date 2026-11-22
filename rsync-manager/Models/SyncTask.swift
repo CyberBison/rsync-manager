@@ -7,6 +7,48 @@
 
 import Foundation
 
+enum SyncDirection: String, Codable, CaseIterable, Identifiable {
+    case oneWay
+    case biSync
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .oneWay: "One-Way Sync"
+        case .biSync: "Bi-Sync"
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .oneWay: "One-way"
+        case .biSync: "Bi-sync"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .oneWay: "arrow.right"
+        case .biSync: "arrow.left.arrow.right"
+        }
+    }
+
+    var verticalSymbolName: String {
+        switch self {
+        case .oneWay: "arrow.down"
+        case .biSync: "arrow.up.arrow.down"
+        }
+    }
+
+    var inlineArrow: String {
+        switch self {
+        case .oneWay: "→"
+        case .biSync: "↔"
+        }
+    }
+}
+
 struct SyncTask: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
@@ -16,9 +58,10 @@ struct SyncTask: Identifiable, Codable, Equatable {
     var lastSyncDate: Date?
     var lastSyncStatus: String?
     var isActive: Bool
+    var direction: SyncDirection
     
     enum CodingKeys: String, CodingKey {
-        case id, name, arguments, source, destination, lastSyncDate, lastSyncStatus, isActive
+        case id, name, arguments, source, destination, lastSyncDate, lastSyncStatus, isActive, direction
     }
     
     init(from decoder: Decoder) throws {
@@ -31,6 +74,7 @@ struct SyncTask: Identifiable, Codable, Equatable {
         self.lastSyncDate = try container.decodeIfPresent(Date.self, forKey: .lastSyncDate)
         self.lastSyncStatus = try container.decodeIfPresent(String.self, forKey: .lastSyncStatus)
         self.isActive = try container.decode(Bool.self, forKey: .isActive)
+        self.direction = try container.decodeIfPresent(SyncDirection.self, forKey: .direction) ?? .oneWay
     }
 
     func encode(to encoder: Encoder) throws {
@@ -43,9 +87,10 @@ struct SyncTask: Identifiable, Codable, Equatable {
         try container.encode(lastSyncDate, forKey: .lastSyncDate)
         try container.encode(lastSyncStatus, forKey: .lastSyncStatus)
         try container.encode(isActive, forKey: .isActive)
+        try container.encode(direction, forKey: .direction)
     }
     
-    init(id: UUID, name: String, arguments: String, source: String, destination: String, lastSyncDate: Date?, lastSyncStatus: String?, isActive: Bool) {
+    init(id: UUID, name: String, arguments: String, source: String, destination: String, lastSyncDate: Date?, lastSyncStatus: String?, isActive: Bool, direction: SyncDirection = .oneWay) {
             self.id = id
             self.name = name
             self.arguments = arguments
@@ -54,5 +99,6 @@ struct SyncTask: Identifiable, Codable, Equatable {
             self.lastSyncDate = lastSyncDate
             self.lastSyncStatus = lastSyncStatus
             self.isActive = isActive
+            self.direction = direction
         }
 }
