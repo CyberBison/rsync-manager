@@ -43,13 +43,9 @@ The app is under active development. Scheduled backups and notifications are pla
 ## Installation
 
 ### Option 1: Install via Homebrew
-1. Tap the custom Homebrew repository:
+1. Install the app:
    ```bash
-   brew tap cyberbison/custombrew
-   ```
-2. Install the app:
-   ```bash
-   brew install --cask rsync-manager
+   brew install --cask cyberbison/custombrew/rsync-manager
    ```
 
 ### Option 2: Build from Source
