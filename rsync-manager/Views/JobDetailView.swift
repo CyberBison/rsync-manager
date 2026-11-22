@@ -49,15 +49,35 @@ struct JobDetailView: View {
                 }
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .center, spacing: 20) {
-                        EndpointView(title: "Source", path: task.source).frame(minWidth: 200)
+                        EndpointView(
+                            title: "Source",
+                            path: task.source,
+                            isSSH: task.sourceType == .ssh,
+                            sshConfiguration: task.sourceType == .ssh ? task.sshConfiguration : nil
+                        ).frame(minWidth: 200)
                         Image(systemName: "arrow.right").font(.title2).foregroundStyle(.tertiary)
                             .accessibilityLabel("Syncs to")
-                        EndpointView(title: "Destination", path: task.destination).frame(minWidth: 200)
+                        EndpointView(
+                            title: "Destination",
+                            path: task.destination,
+                            isSSH: task.destinationType == .ssh,
+                            sshConfiguration: task.destinationType == .ssh ? task.sshConfiguration : nil
+                        ).frame(minWidth: 200)
                     }
                     VStack(alignment: .leading, spacing: 16) {
-                        EndpointView(title: "Source", path: task.source)
+                        EndpointView(
+                            title: "Source",
+                            path: task.source,
+                            isSSH: task.sourceType == .ssh,
+                            sshConfiguration: task.sourceType == .ssh ? task.sshConfiguration : nil
+                        )
                         Label("Syncs to", systemImage: "arrow.down").font(.caption).foregroundStyle(.secondary)
-                        EndpointView(title: "Destination", path: task.destination)
+                        EndpointView(
+                            title: "Destination",
+                            path: task.destination,
+                            isSSH: task.destinationType == .ssh,
+                            sshConfiguration: task.destinationType == .ssh ? task.sshConfiguration : nil
+                        )
                     }
                 }
                 .padding(20)
@@ -137,13 +157,21 @@ struct JobDetailView: View {
 struct EndpointView: View {
     let title: String
     let path: String
+    var isSSH: Bool = false
+    var sshConfiguration: SSHConfiguration? = nil
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: path.contains(":") ? "network" : "folder")
+            Label(title, systemImage: (isSSH || path.contains(":")) ? "network" : "folder")
                 .font(.subheadline).foregroundStyle(.secondary)
             Text(endpointName(path)).font(.title3.weight(.semibold)).lineLimit(2)
             Text(path).font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+            if isSSH, let ssh = sshConfiguration {
+                Text("SSH • \(ssh.authSummary)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -158,6 +186,19 @@ struct ProfileInspector: View {
             Section("Profile Options") {
                 LabeledContent("Direction", value: "One-way")
                 LabeledContent("Executable", value: "/usr/bin/rsync")
+            }
+            if task.usesSSH, let ssh = task.sshConfiguration {
+                Section("SSH Connection") {
+                    LabeledContent("Endpoint", value: task.sourceType == .ssh ? "Source" : "Destination")
+                    LabeledContent("Host", value: ssh.host)
+                    if !ssh.user.isEmpty {
+                        LabeledContent("User", value: ssh.user)
+                    }
+                    if let port = ssh.port {
+                        LabeledContent("Port", value: "\(port)")
+                    }
+                    LabeledContent("Authentication", value: ssh.authSummary)
+                }
             }
             Section("Rsync arguments") {
                 Text(task.arguments.isEmpty ? "No additional arguments" : task.arguments)

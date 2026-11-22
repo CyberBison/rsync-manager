@@ -100,7 +100,7 @@ struct ContentView: View {
         ), titleVisibility: .visible) {
             Button("Delete Profile", role: .destructive) {
                 guard let task = deletingTask else { return }
-                viewModel.tasks.removeAll { $0.id == task.id }
+                viewModel.deleteTask(task)
                 if selection == task.id { selection = viewModel.tasks.first?.id }
                 deletingTask = nil
             }
